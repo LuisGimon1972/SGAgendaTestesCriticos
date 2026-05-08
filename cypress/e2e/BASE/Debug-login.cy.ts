@@ -1,5 +1,5 @@
 describe('Debug Login', () => {
-  it('deve tentar fazer login e mostrar a tela após o clique', () => {
+  it('Deve tentar fazer login e mostrar a tela após o clique.', () => {
     cy.login();
 
     cy.screenshot('tela-depois-do-login');

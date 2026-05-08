@@ -298,7 +298,7 @@ describe('Agenda Crítica - Concorrência por duplo clique no Gravar', () => {
     abrirAgenda();
   });
 
-  it('não deve criar agendamento duplicado ao clicar duas vezes em Gravar', () => {
+  it('Não deve criar agendamento duplicado ao clicar duas vezes em Gravar.', () => {
     abrirCadastroAgendamento();
 
     selecionarServico();
@@ -347,7 +347,7 @@ describe('Agenda Crítica - Concorrência por duplo clique no Gravar', () => {
 
       expect(
         postsComSucesso.length,
-        'não deve haver mais de um POST de agendamento com sucesso'
+        'Não deve haver mais de um POST de agendamento com sucesso.'
       ).to.be.lessThan(2);
     });
   });

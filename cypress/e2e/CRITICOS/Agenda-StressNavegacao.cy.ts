@@ -257,23 +257,23 @@ describe('Agenda Crítica - Stress de navegação', () => {
     abrirAgenda();
   });
 
-  it('deve alternar entre DIA, SEMANA e MÊS várias vezes sem quebrar', () => {
+  it('Deve alternar entre DIA, SEMANA e MÊS várias vezes sem quebrar.', () => {
     alternarModosAgenda();
   });
 
-  it('deve navegar dias para frente e para trás sem quebrar', () => {
+  it('Deve navegar dias para frente e para trás sem quebrar.', () => {
     clicarAbaAgenda('DIA')
       .then(() => navegarProximosDias())
       .then(() => navegarDiasAnteriores());
   });
 
-  it('deve abrir detalhes de agendamentos em sequência sem misturar dados ou travar', () => {
+  it('Deve abrir detalhes de agendamentos em sequência sem misturar dados ou travar.', () => {
     clicarAbaAgenda('DIA')
       .then(() => garantirModoLista())
       .then(() => abrirDetalhesAleatorios());
   });
 
-  it('deve suportar scroll extremo na agenda sem quebrar layout', () => {
+  it('Deve suportar scroll extremo na agenda sem quebrar layout.', () => {
     scrollExtremo();
   });
 });

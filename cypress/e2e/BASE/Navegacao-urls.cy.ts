@@ -63,7 +63,7 @@ describe('Navegação e URLs', () => {
   ];
 
   telas.forEach((tela) => {
-    it(`deve navegar para ${tela.nome}`, () => {
+    it(`Deve navegar para ${tela.nome}.`, () => {
       cy.contains(tela.menu, { timeout: 30000 })
         .scrollIntoView()
         .should('exist')
