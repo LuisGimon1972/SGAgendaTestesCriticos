@@ -343,30 +343,30 @@ function abrirCadastroAgendamento() {
     gravarAgendamento();
   }
 
-  function tentarSelecionarMesmaData() {
-    return cy.get('body').then(($body) => {
-      const datas = [...$body.find('*:visible')].filter((el) => {
-        const texto = Cypress.$(el).text().trim();
+ function tentarSelecionarMesmaData() {
+  return cy.get('body').then(($body) => {
+    const datas = [...$body.find('*:visible')].filter((el) => {
+      const texto = Cypress.$(el).text().trim();
 
-        return texto === dataSelecionadaTexto;
+      return texto === dataSelecionadaTexto;
+    });
+
+    if (datas.length === 0) {
+      Cypress.log({
+        name: 'Conflito de horário',
+        message: `A data ${dataSelecionadaTexto} não apareceu novamente. Sistema bloqueou a data.`,
       });
 
-      if (datas.length === 0) {
-        Cypress.log({
-          name: 'Conflito de horário',
-          message: `A data ${dataSelecionadaTexto} não apareceu novamente. Sistema bloqueou a data.`,
-        });
+      return cy.wrap(false);
+    }
 
-        return false;
-      }
-
-      return cy
-        .wrap(datas[0])
-        .scrollIntoView()
-        .click({ force: true })
-        .then(() => true);
-    });
-  }
+    return cy
+      .wrap(datas[0])
+      .scrollIntoView()
+      .click({ force: true })
+      .then(() => true);
+  });
+}
 
   function tentarCriarSegundoMesmoHorario() {
     return cy.get('body').then(($body) => {
