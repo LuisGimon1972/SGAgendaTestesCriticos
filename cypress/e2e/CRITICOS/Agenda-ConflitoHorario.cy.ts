@@ -66,14 +66,12 @@ function abrirCadastroAgendamento() {
         .find('*')
         .filter((_, el) => {
           const t = Cypress.$(el).text().trim();
-
           return /Listagem de agendamentos/i.test(t);
         })
         .first();
 
       if (breadcrumb.length > 0) {
         cy.wrap(breadcrumb).click({ force: true });
-
         cy.wait(1500);
       }
     }
