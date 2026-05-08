@@ -39,7 +39,7 @@ describe('WhatsApp - Teste de conexão', () => {
     abrirConfiguracoesWhatsapp();
   });
 
-  it('deve exibir o status atual da conexão do WhatsApp', () => {
+  it('Deve exibir o status atual da conexão do WhatsApp.', () => {
     cy.get('body')
       .invoke('text')
       .should('match', /Status|Conectado|Desconectado|WhatsApp/i);
@@ -69,7 +69,7 @@ describe('WhatsApp - Teste de conexão', () => {
     validarSemErroGrave();
   });
 
-  it('deve iniciar reconexão do WhatsApp quando estiver desconectado', () => {
+  it('Deve iniciar reconexão do WhatsApp quando estiver desconectado.', () => {
     cy.get('body').then(($body) => {
       const texto = $body.text();
 
