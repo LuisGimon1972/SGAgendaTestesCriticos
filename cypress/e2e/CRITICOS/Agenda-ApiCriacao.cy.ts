@@ -7,10 +7,10 @@ Esse teste crítico faz o seguinte fluxo:
 5. Falha se a API não retornar ID
 */
 
-describe('Agenda Crítica - Validação API criação de agendamento', () => {
+describe("Agenda Crítica - Validação API criação de agendamento", () => {
   function gerarTelefoneAleatorio() {
-    const ddd = '49';
-    const primeiroDigito = '9';
+    const ddd = "49";
+    const primeiroDigito = "9";
     const numero = Math.floor(10000000 + Math.random() * 90000000);
 
     return `${ddd}${primeiroDigito}${numero}`;
@@ -19,9 +19,9 @@ describe('Agenda Crítica - Validação API criação de agendamento', () => {
   const telefone = gerarTelefoneAleatorio();
 
   function fecharCookiesSeAparecer() {
-    cy.get('body').then(($body) => {
-      if ($body.text().includes('Entendi')) {
-        cy.contains('Entendi').click({ force: true });
+    cy.get("body").then(($body) => {
+      if ($body.text().includes("Entendi")) {
+        cy.contains("Entendi").click({ force: true });
       }
     });
   }
@@ -31,19 +31,20 @@ describe('Agenda Crítica - Validação API criação de agendamento', () => {
       .scrollIntoView()
       .click({ force: true });
 
-    cy.contains(/Listagem de agendamentos/i, { timeout: 30000 })
-      .should('be.visible');
+    cy.contains(/Listagem de agendamentos/i, { timeout: 30000 }).should(
+      "be.visible",
+    );
   }
 
   function abrirCadastroAgendamento() {
     cy.contains(/Cadastrar agendamento/i, { timeout: 30000 })
       .scrollIntoView()
-      .should('be.visible')
+      .should("be.visible")
       .click({ force: true });
 
-    cy.get('body', { timeout: 30000 })
-      .invoke('text')
-      .should('match', /Escolha o servi[çc]o/i);
+    cy.get("body", { timeout: 30000 })
+      .invoke("text")
+      .should("match", /Escolha o servi[çc]o/i);
   }
 
   function parseDataDiaMes(texto: string) {
@@ -74,17 +75,17 @@ describe('Agenda Crítica - Validação API criação de agendamento', () => {
   }
 
   function selecionarServico() {
-    cy.get('body', { timeout: 30000 })
-      .invoke('text')
-      .should('match', /Escolha o servi[çc]o/i)
+    cy.get("body", { timeout: 30000 })
+      .invoke("text")
+      .should("match", /Escolha o servi[çc]o/i)
       .then(() => {
         cy.wait(1000);
 
-        cy.get('body').then(($body) => {
+        cy.get("body").then(($body) => {
           const cardsServico = $body
             .find('div:visible, button:visible, [role="button"]:visible')
             .filter((_, el) => {
-              const texto = Cypress.$(el).text().replace(/\s+/g, ' ').trim();
+              const texto = Cypress.$(el).text().replace(/\s+/g, " ").trim();
               const rect = el.getBoundingClientRect();
 
               return (
@@ -98,21 +99,21 @@ describe('Agenda Crítica - Validação API criação de agendamento', () => {
             });
 
           if (cardsServico.length === 0) {
-            cy.screenshot('servico-nao-encontrado');
+            cy.screenshot("servico-nao-encontrado");
 
             throw new Error(
-              'Nenhum card contendo a palavra SERVIÇO foi encontrado.'
+              "Nenhum card contendo a palavra SERVIÇO foi encontrado.",
             );
           }
 
           const cardServico = cardsServico.first();
-          const textoServico = cardServico.text().replace(/\s+/g, ' ').trim();
+          const textoServico = cardServico.text().replace(/\s+/g, " ").trim();
 
           cy.log(`Serviço escolhido: ${textoServico}`);
 
           cy.wrap(cardServico)
             .scrollIntoView()
-            .click('center', { force: true });
+            .click("center", { force: true });
         });
       });
 
@@ -120,17 +121,17 @@ describe('Agenda Crítica - Validação API criação de agendamento', () => {
   }
 
   function selecionarProfissional() {
-    cy.get('body', { timeout: 30000 })
-      .invoke('text')
-      .should('match', /Escolha o profissional/i)
+    cy.get("body", { timeout: 30000 })
+      .invoke("text")
+      .should("match", /Escolha o profissional/i)
       .then(() => {
         cy.wait(1000);
 
-        cy.get('body').then(($body) => {
+        cy.get("body").then(($body) => {
           const cardsAtendente = $body
             .find('div:visible, button:visible, [role="button"]:visible')
             .filter((_, el) => {
-              const texto = Cypress.$(el).text().replace(/\s+/g, ' ').trim();
+              const texto = Cypress.$(el).text().replace(/\s+/g, " ").trim();
               const rect = el.getBoundingClientRect();
 
               return (
@@ -143,24 +144,24 @@ describe('Agenda Crítica - Validação API criação de agendamento', () => {
             });
 
           if (cardsAtendente.length === 0) {
-            cy.screenshot('atendente-e2e-nao-encontrado');
+            cy.screenshot("atendente-e2e-nao-encontrado");
 
             throw new Error(
-              'Nenhum card contendo "E2E Atendente" foi encontrado.'
+              'Nenhum card contendo "E2E Atendente" foi encontrado.',
             );
           }
 
           const cardAtendente = cardsAtendente.first();
           const textoAtendente = cardAtendente
             .text()
-            .replace(/\s+/g, ' ')
+            .replace(/\s+/g, " ")
             .trim();
 
           cy.log(`Atendente escolhido: ${textoAtendente}`);
 
           cy.wrap(cardAtendente)
             .scrollIntoView()
-            .click('center', { force: true });
+            .click("center", { force: true });
         });
       });
 
@@ -168,21 +169,21 @@ describe('Agenda Crítica - Validação API criação de agendamento', () => {
   }
 
   function aguardarDatasAparecerem() {
-    cy.get('body', { timeout: 30000 })
-      .invoke('text')
-      .should('match', /Selecione o dia da semana|\d{2}\/\d{2}/i);
+    cy.get("body", { timeout: 30000 })
+      .invoke("text")
+      .should("match", /Selecione o dia da semana|\d{2}\/\d{2}/i);
   }
 
   function selecionarDataFuturaOuHoje() {
-    return cy.get('body').then(($body) => {
+    return cy.get("body").then(($body) => {
       const agora = new Date();
       const hoje = new Date(
         agora.getFullYear(),
         agora.getMonth(),
-        agora.getDate()
+        agora.getDate(),
       );
 
-      const elementosData = [...$body.find('*:visible')].filter((el) => {
+      const elementosData = [...$body.find("*:visible")].filter((el) => {
         const texto = Cypress.$(el).text().trim();
 
         return /^\d{2}\/\d{2}$/.test(texto);
@@ -200,22 +201,22 @@ describe('Agenda Crítica - Validação API criação de agendamento', () => {
           };
         })
         .filter((item) => item.data !== null) as Array<{
-          el: Element;
-          texto: string;
-          data: Date;
-        }>;
+        el: Element;
+        texto: string;
+        data: Date;
+      }>;
 
-      expect(datas.length, 'datas disponíveis').to.be.greaterThan(0);
+      expect(datas.length, "datas disponíveis").to.be.greaterThan(0);
 
       const datasFuturas = datas.filter((item) => item.data > hoje);
       const datasHoje = datas.filter(
-        (item) => item.data.getTime() === hoje.getTime()
+        (item) => item.data.getTime() === hoje.getTime(),
       );
 
       const dataEscolhida = datasFuturas[0] || datasHoje[0] || datas[0];
       const ehHoje = dataEscolhida.data.getTime() === hoje.getTime();
 
-      Cypress.env('AGENDAMENTO_DATA_EH_HOJE', ehHoje);
+      Cypress.env("AGENDAMENTO_DATA_EH_HOJE", ehHoje);
 
       cy.log(`Data escolhida: ${dataEscolhida.texto}`);
       cy.log(`Data escolhida é hoje? ${ehHoje}`);
@@ -223,18 +224,18 @@ describe('Agenda Crítica - Validação API criação de agendamento', () => {
       return cy
         .wrap(dataEscolhida.el)
         .scrollIntoView()
-        .should('be.visible')
+        .should("be.visible")
         .click({ force: true });
     });
   }
 
   function selecionarHorarioMaiorQueAgora() {
-    return cy.get('body').then(($body) => {
+    return cy.get("body").then(($body) => {
       const agora = new Date();
       const minutosAgora = agora.getHours() * 60 + agora.getMinutes();
-      const dataEhHoje = Cypress.env('AGENDAMENTO_DATA_EH_HOJE') === true;
+      const dataEhHoje = Cypress.env("AGENDAMENTO_DATA_EH_HOJE") === true;
 
-      const elementosHorario = [...$body.find('*:visible')].filter((el) => {
+      const elementosHorario = [...$body.find("*:visible")].filter((el) => {
         const texto = Cypress.$(el).text().trim();
 
         return /^\d{1,2}:\d{2}h$/i.test(texto);
@@ -252,12 +253,12 @@ describe('Agenda Crítica - Validação API criação de agendamento', () => {
           };
         })
         .filter((item) => item.minutos !== null) as Array<{
-          el: Element;
-          texto: string;
-          minutos: number;
-        }>;
+        el: Element;
+        texto: string;
+        minutos: number;
+      }>;
 
-      expect(horarios.length, 'horários disponíveis').to.be.greaterThan(0);
+      expect(horarios.length, "horários disponíveis").to.be.greaterThan(0);
 
       const horariosValidos = dataEhHoje
         ? horarios.filter((item) => item.minutos > minutosAgora)
@@ -265,7 +266,7 @@ describe('Agenda Crítica - Validação API criação de agendamento', () => {
 
       expect(
         horariosValidos.length,
-        'horários futuros disponíveis'
+        "horários futuros disponíveis",
       ).to.be.greaterThan(0);
 
       const horarioEscolhido = horariosValidos[0];
@@ -275,7 +276,7 @@ describe('Agenda Crítica - Validação API criação de agendamento', () => {
       return cy
         .wrap(horarioEscolhido.el)
         .scrollIntoView()
-        .should('be.visible')
+        .should("be.visible")
         .click({ force: true });
     });
   }
@@ -283,30 +284,30 @@ describe('Agenda Crítica - Validação API criação de agendamento', () => {
   function selecionarCliente() {
     cy.contains(/Nome do cliente/i, { timeout: 30000 })
       .scrollIntoView()
-      .should('be.visible');
+      .should("be.visible");
 
-    cy.get('input:visible')
+    cy.get("input:visible")
       .eq(1)
-      .should('be.visible')
+      .should("be.visible")
       .click({ force: true })
-      .type('CLIENTE', { force: true });
+      .type("CLIENTE", { force: true });
 
     cy.wait(1000);
 
     cy.get(
       '.q-menu:visible .q-item, .q-virtual-scroll__content .q-item, [role="option"]',
-      { timeout: 10000 }
+      { timeout: 10000 },
     )
-      .filter(':visible')
+      .filter(":visible")
       .first()
       .click({ force: true });
 
     cy.wait(500);
 
-    cy.get('input:visible')
+    cy.get("input:visible")
       .eq(0)
       .then(($inputTelefone) => {
-        const valorAtual = String($inputTelefone.val() || '').trim();
+        const valorAtual = String($inputTelefone.val() || "").trim();
 
         if (!valorAtual) {
           cy.wrap($inputTelefone)
@@ -357,11 +358,11 @@ describe('Agenda Crítica - Validação API criação de agendamento', () => {
   }
 
   function validarSemErroGrave() {
-    cy.get('body', { timeout: 30000 })
-      .invoke('text')
+    cy.get("body", { timeout: 30000 })
+      .invoke("text")
       .should(
-        'not.match',
-        /TypeError|Cannot read|undefined is not|Internal Server Error|Network Error|Erro interno|is not a function/i
+        "not.match",
+        /TypeError|Cannot read|undefined is not|Internal Server Error|Network Error|Erro interno|is not a function/i,
       );
   }
 
@@ -373,7 +374,7 @@ describe('Agenda Crítica - Validação API criação de agendamento', () => {
     abrirAgenda();
   });
 
-  it('Deve criar agendamento pela tela e validar resposta da API com ID.', () => {
+  it("Deve criar agendamento pela tela e validar resposta da API com ID.", () => {
     abrirCadastroAgendamento();
 
     selecionarServico();
@@ -388,7 +389,7 @@ describe('Agenda Crítica - Validação API criação de agendamento', () => {
 
     cy.contains(/Hor[aá]rios dispon[ií]veis/i, { timeout: 30000 })
       .scrollIntoView()
-      .should('be.visible');
+      .should("be.visible");
 
     selecionarHorarioMaiorQueAgora();
 
@@ -396,14 +397,14 @@ describe('Agenda Crítica - Validação API criação de agendamento', () => {
 
     selecionarCliente();
 
-    cy.intercept('POST', '**/api/**').as('postCriacaoAgendamento');
+    cy.intercept("POST", "**/api/**").as("postCriacaoAgendamento");
 
     cy.contains(/Gravar/i, { timeout: 30000 })
       .scrollIntoView()
-      .should('be.visible')
+      .should("be.visible")
       .click({ force: true });
 
-    cy.wait('@postCriacaoAgendamento', { timeout: 30000 }).then(
+    cy.wait("@postCriacaoAgendamento", { timeout: 30000 }).then(
       (interception) => {
         const statusCode = interception.response?.statusCode;
         const responseBody = interception.response?.body;
@@ -413,36 +414,36 @@ describe('Agenda Crítica - Validação API criação de agendamento', () => {
         cy.log(`STATUS: ${statusCode}`);
         cy.log(`BODY RESPONSE: ${JSON.stringify(responseBody)}`);
 
-        console.log('BODY RESPONSE AGENDAMENTO:', responseBody);
+        console.log("BODY RESPONSE AGENDAMENTO:", responseBody);
 
         expect(statusCode).to.be.within(200, 299);
 
         const idAgendamento = extrairIdResposta(responseBody);
 
-if (idAgendamento) {
-  cy.log(`ID encontrado: ${idAgendamento}`);
-} else {
-  cy.log('API criou o agendamento, mas não retornou ID.');
+        if (idAgendamento) {
+          cy.log(`ID encontrado: ${idAgendamento}`);
+        } else {
+          cy.log("API criou o agendamento, mas não retornou ID.");
 
-  expect(responseBody).to.have.property('code', 201);
+          expect(responseBody).to.have.property("code", 201);
 
-  expect(responseBody)
-    .to.have.property('message')
-    .and.match(/Registro criado|criado/i);
-}
-      }
+          expect(responseBody)
+            .to.have.property("message")
+            .and.match(/Registro criado|criado/i);
+        }
+      },
     );
 
     validarSemErroGrave();
 
-    cy.get('body', { timeout: 30000 })
-      .invoke('text')
+    cy.get("body", { timeout: 30000 })
+      .invoke("text")
       .should(
-        'match',
-        /agendamento|sucesso|salvo|criado|Listagem de agendamentos/i
+        "match",
+        /agendamento|sucesso|salvo|criado|Listagem de agendamentos/i,
       );
   });
-   it('Finalizado', () => {
-    cy.log('Teste Finalizado');
-  }); 
+  it("Finalizado", () => {
+    cy.log("Teste Finalizado");
+  });
 });
