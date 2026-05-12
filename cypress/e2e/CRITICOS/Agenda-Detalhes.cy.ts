@@ -120,20 +120,14 @@ describe('Agenda Crítica - Múltiplos detalhes', () => {
           $linha
             .find('td')
             .last()
-            .find(
-              'i, button, svg, [role="button"], .q-icon'
-            ).length > 0;
+            .find('i, button, svg, [role="button"], .q-icon').length > 0;
 
         const linhaVazia =
           /nenhum|nenhuma|sem dados|sem resultado|não encontrado|nao encontrado/i.test(
             texto
           );
 
-        return (
-          texto.length > 0 &&
-          possuiAcoes &&
-          !linhaVazia
-        );
+        return texto.length > 0 && possuiAcoes && !linhaVazia;
       });
   }
 
@@ -176,8 +170,7 @@ describe('Agenda Crítica - Múltiplos detalhes', () => {
     if (tentativa >= maxDiasPesquisa) {
       Cypress.log({
         name: 'Agenda',
-        message:
-          'Nenhum agendamento encontrado nos dias pesquisados.',
+        message: 'Nenhum agendamento encontrado nos dias pesquisados.',
       });
 
       return cy.wrap(false);
@@ -204,77 +197,71 @@ describe('Agenda Crítica - Múltiplos detalhes', () => {
         return avancarDia()
           .then(() => validarSemErroGrave())
           .then(() => {
-            return procurarDiaComAgendamento(
-              tentativa + 1
-            );
+            return procurarDiaComAgendamento(tentativa + 1);
           });
       });
     });
   }
 
   function abrirDetalheAleatorio() {
-  return cy.get('body').then(($body) => {
-    const linhas = obterLinhasValidas($body);
+    return cy.get('body').then(($body) => {
+      const linhas = obterLinhasValidas($body);
 
-    if (linhas.length === 0) {
+      if (linhas.length === 0) {
+        Cypress.log({
+          name: 'Detalhes',
+          message: 'Nenhuma linha disponível.',
+        });
+
+        return cy.wrap('');
+      }
+
+      const indiceAleatorio = Cypress._.random(0, linhas.length - 1);
+      const linhaSelecionada = Cypress.$(linhas[indiceAleatorio]);
+
+      const textoLinha = linhaSelecionada
+        .text()
+        .replace(/\s+/g, ' ')
+        .trim();
+
       Cypress.log({
-        name: 'Detalhes',
-        message: 'Nenhuma linha disponível.',
+        name: 'Linha escolhida',
+        message: textoLinha,
       });
 
-      return cy.wrap('');
-    }
-
-    const indiceAleatorio = Cypress._.random(0, linhas.length - 1);
-    const linhaSelecionada = Cypress.$(linhas[indiceAleatorio]);
-
-    const textoLinha = linhaSelecionada
-      .text()
-      .replace(/\s+/g, ' ')
-      .trim();
-
-    Cypress.log({
-      name: 'Linha escolhida',
-      message: textoLinha,
+      return cy
+        .wrap(linhaSelecionada)
+        .scrollIntoView()
+        .within(() => {
+          cy.get('td')
+            .last()
+            .find('i, button, svg, [role="button"], .q-icon')
+            .last()
+            .click({ force: true });
+        })
+        .then(() => {
+          return cy.contains(/Detalhes/i, { timeout: 30000 }).should('exist');
+        })
+        .then(() => {
+          return validarSemErroGrave();
+        })
+        .then(() => {
+          return cy.get('body').invoke('text');
+        })
+        .then((textoDetalhe) => {
+          return String(textoDetalhe);
+        });
     });
-
-    return cy
-      .wrap(linhaSelecionada)
-      .scrollIntoView()
-      .within(() => {
-        cy.get('td')
-          .last()
-          .find('i, button, svg, [role="button"], .q-icon')
-          .last()
-          .click({ force: true });
-      })
-      .then(() => {
-        return cy.contains(/Detalhes/i, { timeout: 30000 }).should('exist');
-      })
-      .then(() => {
-        return validarSemErroGrave();
-      })
-      .then(() => {
-        return cy.get('body').invoke('text');
-      })
-      .then((textoDetalhe) => {
-        return String(textoDetalhe);
-      });
-  });
-}
+  }
 
   function voltarListagem(): Cypress.Chainable<void> {
     return cy.get('body').then(($body) => {
       const breadcrumb = $body
         .find('*')
         .filter((_, el) => {
-          const texto = Cypress.$(el)
-            .text()
-            .trim();
+          const texto = Cypress.$(el).text().trim();
 
-          return /Listagem de agendamentos/i.test(
-            texto
-          );
+          return /Listagem de agendamentos/i.test(texto);
         })
         .first();
 
@@ -305,48 +292,45 @@ describe('Agenda Crítica - Múltiplos detalhes', () => {
   }
 
   function abrirMultiplosDetalhes(tentativa = 0) {
-  if (tentativa >= repeticoesDetalhes) {
-    return cy.wrap(null);
-  }
-
-  Cypress.log({
-    name: 'Stress detalhes',
-    message: `Execução ${tentativa + 1}`,
-  });
-
-  return procurarDiaComAgendamento().then((encontrou) => {
-    if (!encontrou) {
-      Cypress.log({
-        name: 'Stress detalhes',
-        message: 'Nenhum agendamento encontrado. Encerrando sem erro.',
-      });
-
+    if (tentativa >= repeticoesDetalhes) {
       return cy.wrap(null);
     }
 
-    return abrirDetalheAleatorio()
-      .then((textoDetalhe) => {
-        validarDetalhe(textoDetalhe);
+    Cypress.log({
+      name: 'Stress detalhes',
+      message: `Execução ${tentativa + 1}`,
+    });
 
-        return voltarListagem();
-      })
-      .then(() => {
-        return garantirModoLista();
-      })
-      .then(() => {
-        return validarSemErroGrave();
-      })
-      .then(() => {
-        return abrirMultiplosDetalhes(tentativa + 1);
-      });
-  });
-}
+    return procurarDiaComAgendamento().then((encontrou) => {
+      if (!encontrou) {
+        Cypress.log({
+          name: 'Stress detalhes',
+          message: 'Nenhum agendamento encontrado. Encerrando sem erro.',
+        });
+
+        return cy.wrap(null);
+      }
+
+      return abrirDetalheAleatorio()
+        .then((textoDetalhe) => {
+          validarDetalhe(textoDetalhe);
+
+          return voltarListagem();
+        })
+        .then(() => {
+          return garantirModoLista();
+        })
+        .then(() => {
+          return validarSemErroGrave();
+        })
+        .then(() => {
+          return abrirMultiplosDetalhes(tentativa + 1);
+        });
+    });
+  }
 
   beforeEach(() => {
-    cy.login({
-      width: 1366,
-      height: 768,
-    });
+    cy.login();
 
     fecharCookiesSeAparecer();
 
@@ -364,7 +348,8 @@ describe('Agenda Crítica - Múltiplos detalhes', () => {
 
     return abrirMultiplosDetalhes();
   });
+
   it('Finalizado', () => {
     cy.log('Teste Finalizado');
-  });   
+  });
 });

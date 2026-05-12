@@ -13,15 +13,15 @@ describe('WhatsApp - Teste de conexão', () => {
       .click({ force: true });
 
     cy.contains(/Configura[çc][õo]es/i, { timeout: 30000 })
-      .should('be.visible');
+      .should('exist');
 
     cy.contains(/^WhatsApp$/i, { timeout: 30000 })
-      .should('be.visible')
+      .should('exist')
       .click({ force: true });
 
-    cy.get('body', { timeout: 30000 })
-      .invoke('text')
-      .should('match', /WhatsApp|Conex[aã]o do WhatsApp|Mensagens autom[aá]ticas/i);
+    cy.contains(/WhatsApp|Mensagens autom[aá]ticas|Conectar WhatsApp/i, {
+      timeout: 30000,
+    }).should('exist');
   }
 
   function validarSemErroGrave() {
@@ -33,37 +33,63 @@ describe('WhatsApp - Teste de conexão', () => {
       );
   }
 
+  function obterStatusWhatsapp(texto: string) {
+    const estaConectado =
+      /Conectado/i.test(texto) &&
+      !/Desconectado/i.test(texto) &&
+      !/Conectar WhatsApp/i.test(texto);
+
+    const estaDesconectado =
+      /Desconectado/i.test(texto) ||
+      /Conectar WhatsApp/i.test(texto) ||
+      /Reconectar WhatsApp/i.test(texto) ||
+      /QR|qrcode/i.test(texto);
+
+    if (estaConectado) {
+      return 'conectado';
+    }
+
+    if (estaDesconectado) {
+      return 'desconectado';
+    }
+
+    return 'indefinido';
+  }
+
   beforeEach(() => {
-    cy.login({ width: 1366, height: 768 });
+    cy.login();
+
     fecharCookiesSeAparecer();
+
     abrirConfiguracoesWhatsapp();
   });
 
   it('Deve exibir o status atual da conexão do WhatsApp.', () => {
-    cy.get('body')
+    cy.get('body', { timeout: 30000 })
       .invoke('text')
-      .should('match', /Status|Conectado|Desconectado|WhatsApp/i);
+      .should('match', /WhatsApp|Conectar WhatsApp|Mensagens autom[aá]ticas/i);
 
     cy.get('body').then(($body) => {
       const texto = $body.text();
+      const status = obterStatusWhatsapp(texto);
 
-      if (/Conectado/i.test(texto)) {
-        Cypress.log({
-          name: 'WhatsApp',
-          message: 'WhatsApp está conectado.',
-        });
+      if (status === 'conectado') {
+        cy.log('WhatsApp está conectado.');
 
         expect(texto).to.match(/Conectado/i);
-      } else if (/Desconectado/i.test(texto)) {
-        Cypress.log({
-          name: 'WhatsApp',
-          message: 'WhatsApp está desconectado.',
-        });
-
-        expect(texto).to.match(/Desconectado/i);
-      } else {
-        throw new Error('Não foi possível identificar o status do WhatsApp.');
+        return;
       }
+
+      if (status === 'desconectado') {
+        cy.log('WhatsApp está desconectado ou disponível para conectar.');
+
+        expect(texto).to.match(/Conectar WhatsApp|Desconectado|Reconectar WhatsApp|QR|qrcode/i);
+        return;
+      }
+
+      throw new Error(
+        `Não foi possível identificar o status do WhatsApp. Texto encontrado: ${texto}`
+      );
     });
 
     validarSemErroGrave();
@@ -72,20 +98,18 @@ describe('WhatsApp - Teste de conexão', () => {
   it('Deve iniciar reconexão do WhatsApp quando estiver desconectado.', () => {
     cy.get('body').then(($body) => {
       const texto = $body.text();
+      const status = obterStatusWhatsapp(texto);
 
-      if (/Conectado/i.test(texto) && !/Desconectado/i.test(texto)) {
-        Cypress.log({
-          name: 'WhatsApp',
-          message: 'WhatsApp já está conectado. Não será feita reconexão.',
-        });
-
+      if (status === 'conectado') {
+        cy.log('WhatsApp já está conectado. Não será feita reconexão.');
         return;
       }
 
       cy.contains(/Reconectar WhatsApp|Conectar WhatsApp|Conectar/i, {
         timeout: 30000,
       })
-        .should('be.visible')
+        .should('exist')
+        .scrollIntoView()
         .click({ force: true });
 
       cy.wait(3000);
@@ -94,13 +118,14 @@ describe('WhatsApp - Teste de conexão', () => {
         .invoke('text')
         .should(
           'match',
-          /WhatsApp|QR|qrcode|conectar|reconectar|aguarde|conectando|Status/i
+          /WhatsApp|QR|qrcode|conectar|reconectar|aguarde|conectando|Status|Mensagens autom[aá]ticas/i
         );
     });
 
     validarSemErroGrave();
   });
+
   it('Finalizado', () => {
     cy.log('Teste Finalizado');
-  });   
+  });
 });

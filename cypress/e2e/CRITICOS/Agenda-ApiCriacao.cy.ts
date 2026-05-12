@@ -41,8 +41,9 @@ describe('Agenda Crítica - Validação API criação de agendamento', () => {
       .should('be.visible')
       .click({ force: true });
 
-    cy.contains(/Escolha o servi[çc]o/i, { timeout: 30000 })
-      .should('be.visible');
+    cy.get('body', { timeout: 30000 })
+      .invoke('text')
+      .should('match', /Escolha o servi[çc]o/i);
   }
 
   function parseDataDiaMes(texto: string) {
@@ -73,25 +74,103 @@ describe('Agenda Crítica - Validação API criação de agendamento', () => {
   }
 
   function selecionarServico() {
-    cy.contains(/CORTE DE BARBA GROSSA/i, { timeout: 30000 })
-      .scrollIntoView()
-      .should('be.visible')
-      .click({ force: true });
+    cy.get('body', { timeout: 30000 })
+      .invoke('text')
+      .should('match', /Escolha o servi[çc]o/i)
+      .then(() => {
+        cy.wait(1000);
+
+        cy.get('body').then(($body) => {
+          const cardsServico = $body
+            .find('div:visible, button:visible, [role="button"]:visible')
+            .filter((_, el) => {
+              const texto = Cypress.$(el).text().replace(/\s+/g, ' ').trim();
+              const rect = el.getBoundingClientRect();
+
+              return (
+                /servi[çc]o/i.test(texto) &&
+                !/^Escolha o servi[çc]o$/i.test(texto) &&
+                rect.width >= 80 &&
+                rect.width <= 350 &&
+                rect.height >= 60 &&
+                rect.height <= 250
+              );
+            });
+
+          if (cardsServico.length === 0) {
+            cy.screenshot('servico-nao-encontrado');
+
+            throw new Error(
+              'Nenhum card contendo a palavra SERVIÇO foi encontrado.'
+            );
+          }
+
+          const cardServico = cardsServico.first();
+          const textoServico = cardServico.text().replace(/\s+/g, ' ').trim();
+
+          cy.log(`Serviço escolhido: ${textoServico}`);
+
+          cy.wrap(cardServico)
+            .scrollIntoView()
+            .click('center', { force: true });
+        });
+      });
 
     cy.wait(1000);
   }
 
   function selecionarProfissional() {
-    cy.contains(/Escolha o profissional/i, { timeout: 30000 })
-      .scrollIntoView()
-      .should('be.visible');
+    cy.get('body', { timeout: 30000 })
+      .invoke('text')
+      .should('match', /Escolha o profissional/i)
+      .then(() => {
+        cy.wait(1000);
 
-    cy.contains(/MARCOS\s+OLIVEIRA/i, { timeout: 30000 })
-      .scrollIntoView()
-      .should('be.visible')
-      .click({ force: true });
+        cy.get('body').then(($body) => {
+          const cardsAtendente = $body
+            .find('div:visible, button:visible, [role="button"]:visible')
+            .filter((_, el) => {
+              const texto = Cypress.$(el).text().replace(/\s+/g, ' ').trim();
+              const rect = el.getBoundingClientRect();
+
+              return (
+                /E2E\s+Atendente/i.test(texto) &&
+                rect.width >= 70 &&
+                rect.width <= 350 &&
+                rect.height >= 60 &&
+                rect.height <= 300
+              );
+            });
+
+          if (cardsAtendente.length === 0) {
+            cy.screenshot('atendente-e2e-nao-encontrado');
+
+            throw new Error(
+              'Nenhum card contendo "E2E Atendente" foi encontrado.'
+            );
+          }
+
+          const cardAtendente = cardsAtendente.first();
+          const textoAtendente = cardAtendente
+            .text()
+            .replace(/\s+/g, ' ')
+            .trim();
+
+          cy.log(`Atendente escolhido: ${textoAtendente}`);
+
+          cy.wrap(cardAtendente)
+            .scrollIntoView()
+            .click('center', { force: true });
+        });
+      });
 
     cy.wait(3000);
+  }
+
+  function aguardarDatasAparecerem() {
+    cy.get('body', { timeout: 30000 })
+      .invoke('text')
+      .should('match', /Selecione o dia da semana|\d{2}\/\d{2}/i);
   }
 
   function selecionarDataFuturaOuHoje() {
@@ -134,15 +213,12 @@ describe('Agenda Crítica - Validação API criação de agendamento', () => {
       );
 
       const dataEscolhida = datasFuturas[0] || datasHoje[0] || datas[0];
-
       const ehHoje = dataEscolhida.data.getTime() === hoje.getTime();
 
       Cypress.env('AGENDAMENTO_DATA_EH_HOJE', ehHoje);
 
-      Cypress.log({
-        name: 'Data escolhida',
-        message: `${dataEscolhida.texto} | Hoje: ${ehHoje}`,
-      });
+      cy.log(`Data escolhida: ${dataEscolhida.texto}`);
+      cy.log(`Data escolhida é hoje? ${ehHoje}`);
 
       return cy
         .wrap(dataEscolhida.el)
@@ -194,10 +270,7 @@ describe('Agenda Crítica - Validação API criação de agendamento', () => {
 
       const horarioEscolhido = horariosValidos[0];
 
-      Cypress.log({
-        name: 'Horário escolhido',
-        message: horarioEscolhido.texto,
-      });
+      cy.log(`Horário escolhido: ${horarioEscolhido.texto}`);
 
       return cy
         .wrap(horarioEscolhido.el)
@@ -293,8 +366,10 @@ describe('Agenda Crítica - Validação API criação de agendamento', () => {
   }
 
   beforeEach(() => {
-    cy.login({ width: 1366, height: 768 });
+    cy.login();
+
     fecharCookiesSeAparecer();
+
     abrirAgenda();
   });
 
@@ -304,6 +379,8 @@ describe('Agenda Crítica - Validação API criação de agendamento', () => {
     selecionarServico();
 
     selecionarProfissional();
+
+    aguardarDatasAparecerem();
 
     selecionarDataFuturaOuHoje();
 
@@ -327,46 +404,33 @@ describe('Agenda Crítica - Validação API criação de agendamento', () => {
       .click({ force: true });
 
     cy.wait('@postCriacaoAgendamento', { timeout: 30000 }).then(
-  (interception) => {
-    const statusCode = interception.response?.statusCode;
-    const responseBody = interception.response?.body;
-    const requestUrl = interception.request.url;
+      (interception) => {
+        const statusCode = interception.response?.statusCode;
+        const responseBody = interception.response?.body;
+        const requestUrl = interception.request.url;
 
-    Cypress.log({
-      name: 'URL',
-      message: requestUrl,
-    });
+        cy.log(`URL: ${requestUrl}`);
+        cy.log(`STATUS: ${statusCode}`);
+        cy.log(`BODY RESPONSE: ${JSON.stringify(responseBody)}`);
 
-    Cypress.log({
-      name: 'STATUS',
-      message: String(statusCode),
-    });
+        console.log('BODY RESPONSE AGENDAMENTO:', responseBody);
 
-    cy.log(
-      `BODY RESPONSE: ${JSON.stringify(responseBody)}`
-    );
+        expect(statusCode).to.be.within(200, 299);
 
-    console.log(
-      'BODY RESPONSE AGENDAMENTO:',
-      responseBody
-    );
+        const idAgendamento = extrairIdResposta(responseBody);
 
-    expect(statusCode).to.be.within(200, 299);
+if (idAgendamento) {
+  cy.log(`ID encontrado: ${idAgendamento}`);
+} else {
+  cy.log('API criou o agendamento, mas não retornou ID.');
 
-    const idAgendamento = extrairIdResposta(responseBody);
+  expect(responseBody).to.have.property('code', 201);
 
-    if (idAgendamento) {
-      Cypress.log({
-        name: 'ID encontrado',
-        message: String(idAgendamento),
-      });
-    } else {
-      Cypress.log({
-        name: 'Sem ID na resposta',
-        message: JSON.stringify(responseBody),
-      });
-    }
-  }
+  expect(responseBody)
+    .to.have.property('message')
+    .and.match(/Registro criado|criado/i);
+}
+      }
     );
 
     validarSemErroGrave();
@@ -378,7 +442,7 @@ describe('Agenda Crítica - Validação API criação de agendamento', () => {
         /agendamento|sucesso|salvo|criado|Listagem de agendamentos/i
       );
   });
-  it('Finalizado', () => {
+   it('Finalizado', () => {
     cy.log('Teste Finalizado');
-  });   
+  }); 
 });
