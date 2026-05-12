@@ -450,4 +450,7 @@ function abrirCadastroAgendamento() {
       tentarCriarSegundoMesmoHorario();
     });
   });
+  it('Finalizado', () => {
+    cy.log('Teste Finalizado');
+  });   
 });

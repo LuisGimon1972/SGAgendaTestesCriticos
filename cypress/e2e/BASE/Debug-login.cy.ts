@@ -8,4 +8,7 @@ describe('Debug Login', () => {
       cy.log($body.text());
     });
   });
+  it('Finalizado', () => {
+    cy.log('Teste Finalizado');
+  });   
 });

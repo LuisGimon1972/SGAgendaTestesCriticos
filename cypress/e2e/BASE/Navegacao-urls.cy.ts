@@ -76,4 +76,7 @@ describe('Navegação e URLs', () => {
       cy.url().should('include', 'admin-hom.sgagenda.com');
     });
   });
+  it('Finalizado', () => {
+    cy.log('Teste Finalizado');
+  });   
 });

@@ -125,5 +125,8 @@ describe('Agenda Crítica - Rede lenta', () => {
       .should('match', /Escolha o servi[çc]o|Agendamento/i);
 
     validarSemErroGrave();
-  });
+  });   
+  it('Finalizado', () => {
+    cy.log('Teste Finalizado');
+  });   
 });

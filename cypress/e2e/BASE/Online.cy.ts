@@ -3,4 +3,7 @@ describe('Smoke Test - SG Agenda', () => {
     cy.visit('/');
     cy.title().should('match', /SG Agenda|Painel/i);
   });
+  it('Finalizado', () => {
+    cy.log('Teste Finalizado');
+  });   
 });

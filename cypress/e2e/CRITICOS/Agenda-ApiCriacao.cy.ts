@@ -378,4 +378,7 @@ describe('Agenda Crítica - Validação API criação de agendamento', () => {
         /agendamento|sucesso|salvo|criado|Listagem de agendamentos/i
       );
   });
+  it('Finalizado', () => {
+    cy.log('Teste Finalizado');
+  });   
 });

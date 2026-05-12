@@ -100,4 +100,7 @@ describe('WhatsApp - Teste de conexão', () => {
 
     validarSemErroGrave();
   });
+  it('Finalizado', () => {
+    cy.log('Teste Finalizado');
+  });   
 });

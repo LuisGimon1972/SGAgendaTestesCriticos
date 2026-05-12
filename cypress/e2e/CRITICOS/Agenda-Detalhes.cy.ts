@@ -364,4 +364,7 @@ describe('Agenda Crítica - Múltiplos detalhes', () => {
 
     return abrirMultiplosDetalhes();
   });
+  it('Finalizado', () => {
+    cy.log('Teste Finalizado');
+  });   
 });

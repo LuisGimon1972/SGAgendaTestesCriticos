@@ -283,4 +283,7 @@ function validarBotaoVisivel(texto: RegExp, nome: string) {
         .should('be.visible');
     });
   });
+  it('Finalizado', () => {
+    cy.log('Teste Finalizado');
+  });   
 });

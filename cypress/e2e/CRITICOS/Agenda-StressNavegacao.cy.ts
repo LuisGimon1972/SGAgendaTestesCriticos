@@ -276,4 +276,7 @@ describe('Agenda Crítica - Stress de navegação', () => {
   it('Deve suportar scroll extremo na agenda sem quebrar layout.', () => {
     scrollExtremo();
   });
+  it('Finalizado', () => {
+    cy.log('Teste Finalizado');
+  });   
 });

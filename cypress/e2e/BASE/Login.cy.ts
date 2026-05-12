@@ -22,4 +22,7 @@ describe('SG Agenda Admin - Login', () => {
     cy.contains(/inválido|incorreto|credenciais|senha|erro/i)
       .should('be.visible');
   });
+  it('Finalizado', () => {
+    cy.log('Teste Finalizado');
+  });   
 });

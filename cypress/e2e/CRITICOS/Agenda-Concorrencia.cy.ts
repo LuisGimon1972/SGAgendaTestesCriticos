@@ -351,4 +351,7 @@ describe('Agenda Crítica - Concorrência por duplo clique no Gravar', () => {
       ).to.be.lessThan(2);
     });
   });
+  it('Finalizado', () => {
+    cy.log('Teste Finalizado');
+  });   
 });
