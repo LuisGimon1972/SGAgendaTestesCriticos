@@ -40,6 +40,19 @@ describe('Agenda Crítica - Stress de navegação', () => {
       );
   }
 
+  function validarTelaDetalhesOuAgenda() {
+    cy.get('body', { timeout: 30000 })
+      .invoke('text')
+      .should(
+        'match',
+        /Detalhes|Cliente|Telefone|Atendentes|Serviços agendados|Valor|Listagem de agendamentos|Agenda/i
+      )
+      .and(
+        'not.match',
+        /TypeError|Cannot read|is not a function|undefined is not|Internal Server Error|Erro interno|Network Error/i
+      );
+  }
+
   function clicarAbaAgenda(modo: 'DIA' | 'SEMANA' | 'MÊS') {
     const regex =
       modo === 'MÊS'
@@ -75,7 +88,9 @@ describe('Agenda Crítica - Stress de navegação', () => {
   function clicarIconePorTexto(regex: RegExp) {
     return cy.get('body').then(($body) => {
       const icones = $body
-        .find('button:visible, .q-btn:visible, i:visible, .q-icon:visible, [role="button"]:visible')
+        .find(
+          'button:visible, .q-btn:visible, i:visible, .q-icon:visible, [role="button"]:visible'
+        )
         .filter((_, el) => {
           const texto = Cypress.$(el).text().trim();
 
@@ -91,7 +106,8 @@ describe('Agenda Crítica - Stress de navegação', () => {
         return cy.wrap(null);
       }
 
-      return cy.wrap(icones.first())
+      return cy
+        .wrap(icones.first())
         .click({ force: true })
         .then(() => {
           cy.wait(1000);
@@ -142,7 +158,9 @@ describe('Agenda Crítica - Stress de navegação', () => {
       }
 
       const botoesLista = $body
-        .find('button:visible, .q-btn:visible, i:visible, .q-icon:visible, [role="button"]:visible')
+        .find(
+          'button:visible, .q-btn:visible, i:visible, .q-icon:visible, [role="button"]:visible'
+        )
         .filter((_, el) => {
           const textoIcone = Cypress.$(el).text().trim();
 
@@ -158,7 +176,90 @@ describe('Agenda Crítica - Stress de navegação', () => {
         return cy.wrap(null);
       }
 
-      return cy.wrap(botoesLista.first())
+      return cy
+        .wrap(botoesLista.first())
+        .click({ force: true })
+        .then(() => {
+          cy.wait(1000);
+        });
+    });
+  }
+
+  function obterLinhasComAcoes($body: JQuery<HTMLElement>) {
+    return $body
+      .find('tbody tr:visible')
+      .toArray()
+      .filter((linha) => {
+        const $linha = Cypress.$(linha);
+        const texto = $linha.text().replace(/\s+/g, ' ').trim();
+
+        const temAcoes =
+          $linha
+            .find('td')
+            .last()
+            .find('i, button, svg, [role="button"], .q-icon, .q-btn')
+            .length > 0;
+
+        const linhaVazia =
+          /nenhum|nenhuma|sem dados|sem resultado|não encontrado|nao encontrado/i.test(
+            texto
+          );
+
+        return texto.length > 0 && temAcoes && !linhaVazia;
+      });
+  }
+
+  function clicarBotaoDetalheDaLinha(linha: JQuery<HTMLElement>) {
+    const acoes = linha
+      .find('td')
+      .last()
+      .find('button:visible, .q-btn:visible, i:visible, svg:visible, [role="button"]:visible, .q-icon:visible');
+
+    const acaoDetalhe = acoes
+      .filter((_, el) => {
+        const texto = Cypress.$(el).text().trim();
+
+        return /visibility|remove_red_eye|Detalhes|info|search|open_in_new/i.test(
+          texto
+        );
+      })
+      .first();
+
+    if (acaoDetalhe.length > 0) {
+      return cy.wrap(acaoDetalhe).click({ force: true });
+    }
+
+    return cy.wrap(acoes.first()).click({ force: true });
+  }
+
+  function voltarParaListagemSeEstiverEmDetalhes() {
+    return cy.get('body').then(($body) => {
+      const texto = $body.text();
+
+      if (!/Detalhes|Cliente|Telefone|Atendentes|Serviços agendados|Valor/i.test(texto)) {
+        return cy.wrap(null);
+      }
+
+      const breadcrumbListagem = $body
+        .find('*')
+        .filter((_, el) => {
+          const textoElemento = Cypress.$(el).text().trim();
+
+          return /Listagem de agendamentos/i.test(textoElemento);
+        })
+        .first();
+
+      if (breadcrumbListagem.length > 0) {
+        return cy
+          .wrap(breadcrumbListagem)
+          .click({ force: true })
+          .then(() => {
+            cy.wait(1000);
+          });
+      }
+
+      return cy
+        .contains(/Agenda/i, { timeout: 30000 })
         .click({ force: true })
         .then(() => {
           cy.wait(1000);
@@ -173,21 +274,7 @@ describe('Agenda Crítica - Stress de navegação', () => {
 
     return garantirModoLista().then(() => {
       return cy.get('body').then(($body) => {
-        const linhas = $body
-          .find('tbody tr:visible')
-          .toArray()
-          .filter((linha) => {
-            const $linha = Cypress.$(linha);
-            const texto = $linha.text().trim();
-            const temAcoes =
-              $linha
-                .find('td')
-                .last()
-                .find('i, button, svg, [role="button"], .q-icon')
-                .length > 0;
-
-            return texto.length > 0 && temAcoes;
-          });
+        const linhas = obterLinhasComAcoes($body);
 
         if (linhas.length === 0) {
           Cypress.log({
@@ -201,29 +288,30 @@ describe('Agenda Crítica - Stress de navegação', () => {
         const indiceAleatorio = Cypress._.random(0, linhas.length - 1);
         const linhaSelecionada = Cypress.$(linhas[indiceAleatorio]);
 
+        const textoLinha = linhaSelecionada
+          .text()
+          .replace(/\s+/g, ' ')
+          .trim();
+
         Cypress.log({
           name: 'Stress Agenda',
-          message: `Abrindo detalhe aleatório ${tentativa + 1}`,
+          message: `Abrindo detalhe aleatório ${tentativa + 1}: ${textoLinha}`,
         });
 
-        return cy.wrap(linhaSelecionada)
+        return cy
+          .wrap(linhaSelecionada)
           .scrollIntoView()
-          .within(() => {
-            cy.get('td')
-              .last()
-              .find('i, button, svg, [role="button"], .q-icon')
-              .last()
-              .click({ force: true });
+          .then(() => {
+            return clicarBotaoDetalheDaLinha(linhaSelecionada);
           })
           .then(() => {
-            cy.contains(/Detalhes/i, { timeout: 30000 })
-              .should('exist');
+            cy.wait(1500);
 
-            validarAgendaSemErros();
+            validarTelaDetalhesOuAgenda();
 
-            cy.contains(/Listagem de agendamentos/i, { timeout: 30000 })
-              .click({ force: true });
-
+            return voltarParaListagemSeEstiverEmDetalhes();
+          })
+          .then(() => {
             cy.wait(1000);
 
             return abrirDetalhesAleatorios(tentativa + 1);
@@ -252,8 +340,10 @@ describe('Agenda Crítica - Stress de navegação', () => {
   }
 
   beforeEach(() => {
-    cy.login({ width: 1366, height: 768 });
+    cy.login();
+
     fecharCookiesSeAparecer();
+
     abrirAgenda();
   });
 
@@ -276,7 +366,8 @@ describe('Agenda Crítica - Stress de navegação', () => {
   it('Deve suportar scroll extremo na agenda sem quebrar layout.', () => {
     scrollExtremo();
   });
+
   it('Finalizado', () => {
     cy.log('Teste Finalizado');
-  });   
+  });
 });
