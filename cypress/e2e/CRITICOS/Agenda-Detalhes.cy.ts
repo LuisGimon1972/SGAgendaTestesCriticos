@@ -337,7 +337,7 @@ describe('Agenda Crítica - Múltiplos detalhes', () => {
     abrirAgenda();
   });
 
-  it('deve abrir vários detalhes em sequência sem travar ou misturar dados', () => {
+  it('Deve abrir vários detalhes em sequência sem travar ou misturar dados', () => {
     cy.contains(/^DIA$/i, {
       timeout: 30000,
     })
