@@ -102,7 +102,7 @@ describe("Agenda Crítica - Validação API criação de agendamento", () => {
             cy.screenshot("servico-nao-encontrado");
 
             throw new Error(
-              "Nenhum card contendo a palavra SERVIÇO foi encontrado.",
+              "Nenhum card contendo a palavra SERVIÇO foi encontrado. Deve cadastrar um serviço!",
             );
           }
 
@@ -147,7 +147,7 @@ describe("Agenda Crítica - Validação API criação de agendamento", () => {
             cy.screenshot("atendente-e2e-nao-encontrado");
 
             throw new Error(
-              'Nenhum card contendo "E2E Atendente" foi encontrado.',
+              'Nenhum card contendo "E2E Atendente" foi encontrado. Deve cadastrar um atendende!',
             );
           }
 

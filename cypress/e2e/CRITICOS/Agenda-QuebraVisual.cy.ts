@@ -282,8 +282,8 @@ function validarBotaoVisivel(texto: RegExp, nome: string) {
         .scrollIntoView()
         .should('be.visible');
     });
-  });
-  it('Finalizado', () => {
+     it('Finalizado', () => {
     cy.log('Teste Finalizado');
   });   
+  }); 
 });
