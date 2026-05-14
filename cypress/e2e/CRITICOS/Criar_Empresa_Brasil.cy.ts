@@ -397,7 +397,7 @@ function preencherCampoProximoAoLabel(label: RegExp, valor: string) {
   salvarUsuarioGeradoNoJson()
   }
 
-   function salvarUsuarioGeradoNoJson() {
+  function salvarUsuarioGeradoNoJson() {
   const arquivo = 'cypress/fixtures/usuarios-gerados.json';
 
   const usuarioGerado = {
