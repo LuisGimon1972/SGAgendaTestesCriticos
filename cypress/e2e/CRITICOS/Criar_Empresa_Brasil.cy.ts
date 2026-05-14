@@ -394,7 +394,36 @@ function preencherCampoProximoAoLabel(label: RegExp, valor: string) {
         'match',
         /Dashboard|Agenda|Clientes|Configura[çc][õo]es|Bom dia|Boa tarde|Boa noite|sucesso/i
       );
+  salvarUsuarioGeradoNoJson()
   }
+
+   function salvarUsuarioGeradoNoJson() {
+  const arquivo = 'cypress/fixtures/usuarios-gerados.json';
+
+  const usuarioGerado = {
+    dataCriacao: new Date().toISOString(),
+    pais: 'Brasil',
+    nomeUsuario,
+    emailUsuario,
+    senhaUsuario,
+    razaoSocial,
+    fantasia,
+    documento: cnpjValido,
+    slug,
+  };
+
+  cy.readFile(arquivo).then((usuariosExistentes) => {
+    const usuarios = Array.isArray(usuariosExistentes)
+      ? usuariosExistentes
+      : [];
+
+    usuarios.push(usuarioGerado);
+
+    cy.writeFile(arquivo, usuarios);
+
+    cy.log(`Usuário salvo no JSON: ${emailUsuario}`);
+  });
+}
 
   it('Deve cadastrar usuário, empresa e configuração inicial do site.', () => {
     fazerLogoutSeNecessario();

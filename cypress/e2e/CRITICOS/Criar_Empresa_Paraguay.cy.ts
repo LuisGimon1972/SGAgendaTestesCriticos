@@ -1,68 +1,20 @@
+import { obterEmpresaParaguaiAleatoria } from '../../support/data/rucs-paraguai';
+
 describe('Cadastro completo - Usuário e empresa Paraguai', () => {
-  const timestamp = Date.now();
 
-  const empresasParaguai = [
-    { ruc: '80000727', razao: 'PARASOFT SRL' },
-    { ruc: '80001298', razao: 'ELECTRONICA INDUSTRIAL ESPECIALIZADA SRL' },
-    { ruc: '80001945', razao: 'PROMEC SRL' },
-    { ruc: '80002010', razao: 'GLORIA SACEI' },
-    { ruc: '80002783', razao: 'MONALISA SRL' },
-    { ruc: '80003175', razao: 'COMERCIAL PANAMERICANA SA' },
-    { ruc: '80005330', razao: 'AMERICANA SA' },
-    { ruc: '80005689', razao: 'DIVA SA' },
-    { ruc: '80006115', razao: 'NICOVINOS SA' },
-    { ruc: '80008968', razao: 'CELLULAR SA' },
-    { ruc: '80009129', razao: 'LASER IMPORT SA' },
-    { ruc: '80010082', razao: 'AURORA TRADING SA' },
-    { ruc: '80010138', razao: 'DISTRIBUIDORA GLORIA SA' },
-    { ruc: '80013141', razao: 'PANTANAL SRL' },
-    { ruc: '80014018', razao: 'SOL CONTROL SRL' },
-  ];
+const timestamp = Date.now();
 
-  const empresaSelecionada =
-    empresasParaguai[timestamp % empresasParaguai.length];
+const empresaSelecionada = obterEmpresaParaguaiAleatoria(timestamp);
 
-  if (!empresaSelecionada) {
-    throw new Error('Nenhuma empresa/RUC disponível para o teste.');
-  }
+const nomeUsuario = `Usuario Paraguai ${timestamp}`;
+const emailUsuario = `usuario.paraguai.${timestamp}@teste.com`;
+const senhaUsuario = '12345678';
 
-  const nomeUsuario = `Usuario Paraguai ${timestamp}`;
-  const emailUsuario = `usuario.paraguai.${timestamp}@teste.com`;
-  const senhaUsuario = '12345678';
-
-  const razaoSocial = `${empresaSelecionada.razao} E2E ${timestamp}`;
-  const fantasia = `Fantasia Paraguai ${timestamp}`;
-  const slug = `py-${timestamp}`;
-
-  function calcularDigitoVerificadorRucParaguai(numeroBase: string) {
-    const numeroLimpo = numeroBase.replace(/\D/g, '');
-
-    let multiplicador = 2;
-    let soma = 0;
-
-    for (let i = numeroLimpo.length - 1; i >= 0; i--) {
-      soma += Number(numeroLimpo[i]) * multiplicador;
-
-      multiplicador++;
-
-      if (multiplicador > 11) {
-        multiplicador = 2;
-      }
-    }
-
-    const resto = soma % 11;
-
-    return resto > 1 ? 11 - resto : 0;
-  }
-
-  function formatarRucParaguai(numeroBase: string) {
-    const numeroLimpo = numeroBase.replace(/\D/g, '');
-    const digito = calcularDigitoVerificadorRucParaguai(numeroLimpo);
-
-    return `${numeroLimpo}-${digito}`;
-  }
-
-  const rucValido = formatarRucParaguai(empresaSelecionada.ruc);
+const razaoSocial = `${empresaSelecionada.razao} E2E ${timestamp}`;
+const fantasia = `Fantasia Paraguai ${timestamp}`;
+const rucValido = empresaSelecionada.rucCompleto;
+const slug = `py-${timestamp}`;
+    
 
   function fecharCookiesSeAparecer() {
     cy.get('body', { timeout: 30000 }).then(($body) => {
@@ -360,7 +312,36 @@ describe('Cadastro completo - Usuário e empresa Paraguai', () => {
         'match',
         /Dashboard|Agenda|Clientes|Configura[çc][õo]es|Configuraciones|Bom dia|Boa tarde|Boa noite|Buenos d[ií]as|Buenas tardes|Buenas noches|sucesso|éxito|exitosamente/i
       );
+    salvarUsuarioGeradoNoJson();
   }
+
+  function salvarUsuarioGeradoNoJson() {
+  const arquivo = 'cypress/fixtures/usuarios-gerados.json';
+
+  const usuarioGerado = {
+    dataCriacao: new Date().toISOString(),
+    pais: 'Paraguay',
+    nomeUsuario,
+    emailUsuario,
+    senhaUsuario,
+    razaoSocial,
+    fantasia,
+    documento: rucValido,
+    slug,
+  };
+
+  cy.readFile(arquivo).then((usuariosExistentes) => {
+    const usuarios = Array.isArray(usuariosExistentes)
+      ? usuariosExistentes
+      : [];
+
+    usuarios.push(usuarioGerado);
+
+    cy.writeFile(arquivo, usuarios);
+
+    cy.log(`Usuário salvo no JSON: ${emailUsuario}`);
+  });
+}
 
   it('deve cadastrar usuário, empresa do Paraguai e configuração inicial do site', () => {
     fazerLogoutSeNecessario();

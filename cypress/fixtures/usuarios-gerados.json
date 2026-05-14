@@ -1,0 +1,35 @@
+[
+  {
+    "dataCriacao": "2026-05-14T17:29:12.491Z",
+    "pais": "Brasil",
+    "nomeUsuario": "Usuario 1778779752424",
+    "emailUsuario": "usuario.1778779752424@teste.com",
+    "senhaUsuario": "12345678",
+    "razaoSocial": "Barbearia 1778779752424",
+    "fantasia": "Fantasia 1778779752424",
+    "documento": "64.637.525/0001-15",
+    "slug": "site-1778779752424"
+  },
+  {
+    "dataCriacao": "2026-05-14T17:29:39.877Z",
+    "pais": "Paraguay",
+    "nomeUsuario": "Usuario Paraguai 1778779779801",
+    "emailUsuario": "usuario.paraguai.1778779779801@teste.com",
+    "senhaUsuario": "12345678",
+    "razaoSocial": "FONOLUZ S.A. E2E 1778779779801",
+    "fantasia": "Fantasia Paraguai 1778779779801",
+    "documento": "80015115-1",
+    "slug": "py-1778779779801"
+  },
+  {
+    "dataCriacao": "2026-05-14T17:30:13.924Z",
+    "pais": "Brasil",
+    "nomeUsuario": "Usuario 1778779813862",
+    "emailUsuario": "usuario.1778779813862@teste.com",
+    "senhaUsuario": "12345678",
+    "razaoSocial": "Barbearia 1778779813862",
+    "fantasia": "Fantasia 1778779813862",
+    "documento": "41.174.983/0001-60",
+    "slug": "site-1778779813862"
+  }
+]
