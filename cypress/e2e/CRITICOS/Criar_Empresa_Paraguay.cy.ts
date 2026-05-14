@@ -1,3 +1,21 @@
+/*
+Esse teste avalia principalmente:
+
+- Se o cadastro de um novo usuário funciona
+- Se o e-mail aleatório é aceito
+- Se a senha e a confirmação da senha são aceitas
+- Se a empresa paraguaia pode ser cadastrada
+- Se o País Paraguay pode ser selecionado
+- Se a moeda Guarani pode ser selecionada
+- Se um RUC válido do Paraguai é aceito
+- Se o sistema bloqueia RUC inválido ou já cadastrado
+- Se a razão social e o nome fantasia são aceitos
+- Se o slug do site é aceito
+- Se o segmento Barbearia pode ser selecionado
+- Se o sistema conclui corretamente o onboarding inicial
+- Se o usuário criado consegue acessar o sistema após o cadastro
+*/
+
 import {
   empresasParaguai,
   formatarRucParaguai,

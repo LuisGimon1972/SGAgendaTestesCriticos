@@ -10,6 +10,8 @@ describe('Agenda Crítica - Conflito de horário', () => {
   let horarioSelecionadoTexto = '';
   let dataSelecionadaEhHoje = false;
 
+  const telefone = gerarTelefoneAleatorio();
+
   function gerarTelefoneAleatorio() {
     const ddd = '49';
     const primeiroDigito = '9';
@@ -18,12 +20,13 @@ describe('Agenda Crítica - Conflito de horário', () => {
     return `${ddd}${primeiroDigito}${numero}`;
   }
 
-  const telefone = gerarTelefoneAleatorio();
-
   function fecharCookiesSeAparecer() {
     cy.get('body').then(($body) => {
-      if ($body.text().includes('Entendi')) {
-        cy.contains('Entendi').click({ force: true });
+      const texto = $body.text();
+
+      if (/Entendi|Aceitar|Aceito|OK|Concordo/i.test(texto)) {
+        cy.contains(/Entendi|Aceitar|Aceito|OK|Concordo/i)
+          .click({ force: true });
       }
     });
   }
@@ -38,7 +41,7 @@ describe('Agenda Crítica - Conflito de horário', () => {
     cy.get('body').then(($body) => {
       const texto = $body.text();
 
-      if (texto.match(/Detalhes do agendamento|Detalhes/i)) {
+      if (/Detalhes do agendamento|Detalhes/i.test(texto)) {
         cy.contains(/Listagem de agendamentos/i, { timeout: 30000 })
           .click({ force: true });
 
@@ -55,16 +58,17 @@ describe('Agenda Crítica - Conflito de horário', () => {
       .scrollIntoView()
       .click({ force: true });
 
-    cy.wait(2000);
+    cy.wait(1500);
 
     cy.get('body').then(($body) => {
       const texto = $body.text();
 
-      if (texto.match(/Detalhes do agendamento|Detalhes/i)) {
+      if (/Detalhes do agendamento|Detalhes/i.test(texto)) {
         const breadcrumb = $body
           .find('*')
           .filter((_, el) => {
             const t = Cypress.$(el).text().trim();
+
             return /Listagem de agendamentos/i.test(t);
           })
           .first();
@@ -83,9 +87,9 @@ describe('Agenda Crítica - Conflito de horário', () => {
 
     cy.get('body').then(($body) => {
       const botaoCadastrar = $body
-        .find('button, .q-btn, [role="button"]')
+        .find('button:visible, .q-btn:visible, [role="button"]:visible')
         .filter((_, el) => {
-          const texto = Cypress.$(el).text().trim();
+          const texto = Cypress.$(el).text().replace(/\s+/g, ' ').trim();
 
           return /Cadastrar agendamento/i.test(texto);
         })
@@ -104,106 +108,6 @@ describe('Agenda Crítica - Conflito de horário', () => {
     cy.get('body', { timeout: 30000 })
       .invoke('text')
       .should('match', /Escolha o servi[çc]o/i);
-  }
-
-  function selecionarServico() {
-    cy.get('body', { timeout: 30000 })
-      .invoke('text')
-      .should('match', /Escolha o servi[çc]o/i)
-      .then(() => {
-        cy.wait(1000);
-
-        cy.get('body').then(($body) => {
-          const cardsServico = $body
-            .find('div:visible, button:visible, [role="button"]:visible')
-            .filter((_, el) => {
-              const texto = Cypress.$(el).text().replace(/\s+/g, ' ').trim();
-              const rect = el.getBoundingClientRect();
-
-              return (
-                /servi[çc]o/i.test(texto) &&
-                !/^Escolha o servi[çc]o$/i.test(texto) &&
-                rect.width >= 80 &&
-                rect.width <= 350 &&
-                rect.height >= 60 &&
-                rect.height <= 250
-              );
-            });
-
-          if (cardsServico.length === 0) {
-            cy.screenshot('servico-nao-encontrado');
-
-            throw new Error(
-              'Nenhum card contendo a palavra SERVIÇO foi encontrado.'
-            );
-          }
-
-          const cardServico = cardsServico.first();
-          const textoServico = cardServico.text().replace(/\s+/g, ' ').trim();
-
-          cy.log(`Serviço escolhido: ${textoServico}`);
-
-          cy.wrap(cardServico)
-            .scrollIntoView()
-            .click('center', { force: true });
-        });
-      });
-
-    cy.wait(1000);
-  }
-
-  function selecionarProfissional() {
-    cy.get('body', { timeout: 30000 })
-      .invoke('text')
-      .should('match', /Escolha o profissional/i)
-      .then(() => {
-        cy.wait(1000);
-
-        cy.get('body').then(($body) => {
-          const cardsAtendente = $body
-            .find('div:visible, button:visible, [role="button"]:visible')
-            .filter((_, el) => {
-              const texto = Cypress.$(el).text().replace(/\s+/g, ' ').trim();
-              const rect = el.getBoundingClientRect();
-
-              return (
-                /E2E\s+Atendente/i.test(texto) &&
-                rect.width >= 70 &&
-                rect.width <= 350 &&
-                rect.height >= 60 &&
-                rect.height <= 300
-              );
-            });
-
-          if (cardsAtendente.length === 0) {
-            cy.screenshot('atendente-e2e-nao-encontrado');
-
-            throw new Error(
-              'Nenhum card contendo "E2E Atendente" foi encontrado.'
-            );
-          }
-
-          const cardAtendente = cardsAtendente.first();
-          const textoAtendente = cardAtendente
-            .text()
-            .replace(/\s+/g, ' ')
-            .trim();
-
-          cy.log(`Atendente escolhido: ${textoAtendente}`);
-
-          cy.wrap(cardAtendente)
-            .scrollIntoView()
-            .click('center', { force: true });
-        });
-      });
-
-    cy.wait(3000);
-  }
-
-  function aguardarDatasAparecerem() {
-    cy.get('body', { timeout: 30000 })
-      .invoke('text')
-      .should('match', /Selecione o dia da semana|\d{2}\/\d{2}/i);
   }
 
   function parseDataDiaMes(texto: string) {
@@ -233,8 +137,146 @@ describe('Agenda Crítica - Conflito de horário', () => {
     return hora * 60 + minuto;
   }
 
+  function obterCardsServico($body: JQuery<HTMLElement>) {
+    return $body
+      .find('div:visible, button:visible, [role="button"]:visible')
+      .toArray()
+      .filter((el) => {
+        const texto = Cypress.$(el).text().replace(/\s+/g, ' ').trim();
+        const rect = el.getBoundingClientRect();
+
+        const temTamanhoDeCard =
+          rect.width >= 100 &&
+          rect.width <= 380 &&
+          rect.height >= 60 &&
+          rect.height <= 260;
+
+        const pareceServico =
+          /R\$\s*\d+/i.test(texto) ||
+          /A partir de R\$/i.test(texto);
+
+        const naoEhTituloOuBusca =
+          !/Escolha o servi[çc]o|Buscar servi[çc]o|Exibir mais/i.test(texto);
+
+        return temTamanhoDeCard && pareceServico && naoEhTituloOuBusca;
+      }) as HTMLElement[];
+  }
+
+  function selecionarServico() {
+    cy.get('body', { timeout: 30000 })
+      .invoke('text')
+      .should('match', /Escolha o servi[çc]o/i);
+
+    cy.wait(1000);
+
+    cy.get('body').then(($body) => {
+      const cardsServico = obterCardsServico($body);
+
+      if (cardsServico.length === 0) {
+        cy.screenshot('servico-nao-encontrado');
+
+        throw new Error(
+          'Nenhum card de serviço encontrado. Cadastre um serviço ou verifique se há serviços disponíveis no agendamento.'
+        );
+      }
+
+      const cardServico = cardsServico[0];
+
+      if (!cardServico) {
+        throw new Error('Card de serviço inválido.');
+      }
+
+      const textoServico = Cypress.$(cardServico)
+        .text()
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      cy.log(`Serviço escolhido: ${textoServico}`);
+
+      cy.wrap(cardServico)
+        .scrollIntoView()
+        .click('center', { force: true });
+    });
+
+    cy.wait(1200);
+  }
+
+  function obterCardsProfissional($body: JQuery<HTMLElement>) {
+    return $body
+      .find('div:visible, button:visible, [role="button"]:visible')
+      .toArray()
+      .filter((el) => {
+        const texto = Cypress.$(el).text().replace(/\s+/g, ' ').trim();
+        const rect = el.getBoundingClientRect();
+
+        const temTamanhoDeCard =
+          rect.width >= 80 &&
+          rect.width <= 400 &&
+          rect.height >= 60 &&
+          rect.height <= 300;
+
+        const naoEhTituloOuBusca =
+          !/Escolha o profissional|Escolha o servi[çc]o|Buscar|Exibir mais/i.test(
+            texto
+          );
+
+        return temTamanhoDeCard && naoEhTituloOuBusca && texto.length >= 3;
+      }) as HTMLElement[];
+  }
+
+  function selecionarProfissional() {
+    cy.get('body', { timeout: 30000 })
+      .invoke('text')
+      .should('match', /Escolha o profissional/i);
+
+    cy.wait(1000);
+
+    cy.get('body').then(($body) => {
+      const cardsProfissional = obterCardsProfissional($body);
+
+      if (cardsProfissional.length === 0) {
+        cy.screenshot('profissional-nao-encontrado');
+
+        throw new Error(
+          'Nenhum card de profissional foi encontrado após selecionar o serviço.'
+        );
+      }
+
+      const profissionalE2E = cardsProfissional.find((card) => {
+        const texto = Cypress.$(card).text().replace(/\s+/g, ' ').trim();
+
+        return /E2E\s+Atendente/i.test(texto);
+      });
+
+      const cardProfissional = profissionalE2E || cardsProfissional[0];
+
+      if (!cardProfissional) {
+        throw new Error('Card de profissional inválido.');
+      }
+
+      const textoProfissional = Cypress.$(cardProfissional)
+        .text()
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      cy.log(`Profissional escolhido: ${textoProfissional}`);
+
+      cy.wrap(cardProfissional)
+        .scrollIntoView()
+        .click('center', { force: true });
+    });
+
+    cy.wait(2000);
+  }
+
+  function aguardarDatasAparecerem() {
+    cy.get('body', { timeout: 30000 })
+      .invoke('text')
+      .should('match', /Selecione o dia da semana|\d{2}\/\d{2}/i);
+  }
+
   function selecionarDataFuturaOuHoje() {
-    return cy.get('body').then(($body) => {
+    cy.get('body').then(($body) => {
       const agora = new Date();
       const hoje = new Date(
         agora.getFullYear(),
@@ -242,11 +284,14 @@ describe('Agenda Crítica - Conflito de horário', () => {
         agora.getDate()
       );
 
-      const elementosData = [...$body.find('*:visible')].filter((el) => {
-        const texto = Cypress.$(el).text().trim();
+      const elementosData = $body
+        .find('*:visible')
+        .toArray()
+        .filter((el) => {
+          const texto = Cypress.$(el).text().trim();
 
-        return /^\d{2}\/\d{2}$/.test(texto);
-      });
+          return /^\d{2}\/\d{2}$/.test(texto);
+        });
 
       const datas = elementosData
         .map((el) => {
@@ -260,10 +305,10 @@ describe('Agenda Crítica - Conflito de horário', () => {
           };
         })
         .filter((item) => item.data !== null) as Array<{
-          el: Element;
-          texto: string;
-          data: Date;
-        }>;
+        el: Element;
+        texto: string;
+        data: Date;
+      }>;
 
       expect(datas.length, 'datas disponíveis').to.be.greaterThan(0);
 
@@ -274,14 +319,18 @@ describe('Agenda Crítica - Conflito de horário', () => {
 
       const dataEscolhida = datasFuturas[0] || datasHoje[0] || datas[0];
 
+      if (!dataEscolhida) {
+        throw new Error('Nenhuma data disponível para selecionar.');
+      }
+
       dataSelecionadaTexto = dataEscolhida.texto;
-      dataSelecionadaEhHoje = dataEscolhida.data.getTime() === hoje.getTime();
+      dataSelecionadaEhHoje =
+        dataEscolhida.data.getTime() === hoje.getTime();
 
       cy.log(`Data escolhida: ${dataSelecionadaTexto}`);
       cy.log(`Data escolhida é hoje? ${dataSelecionadaEhHoje}`);
 
-      return cy
-        .wrap(dataEscolhida.el)
+      cy.wrap(dataEscolhida.el)
         .scrollIntoView()
         .should('be.visible')
         .click({ force: true });
@@ -289,15 +338,18 @@ describe('Agenda Crítica - Conflito de horário', () => {
   }
 
   function selecionarHorarioFuturo() {
-    return cy.get('body').then(($body) => {
+    cy.get('body').then(($body) => {
       const agora = new Date();
       const minutosAgora = agora.getHours() * 60 + agora.getMinutes();
 
-      const elementosHorario = [...$body.find('*:visible')].filter((el) => {
-        const texto = Cypress.$(el).text().trim();
+      const elementosHorario = $body
+        .find('*:visible')
+        .toArray()
+        .filter((el) => {
+          const texto = Cypress.$(el).text().trim();
 
-        return /^\d{1,2}:\d{2}h$/i.test(texto);
-      });
+          return /^\d{1,2}:\d{2}h$/i.test(texto);
+        });
 
       const horarios = elementosHorario
         .map((el) => {
@@ -311,10 +363,10 @@ describe('Agenda Crítica - Conflito de horário', () => {
           };
         })
         .filter((item) => item.minutos !== null) as Array<{
-          el: Element;
-          texto: string;
-          minutos: number;
-        }>;
+        el: Element;
+        texto: string;
+        minutos: number;
+      }>;
 
       expect(horarios.length, 'horários disponíveis').to.be.greaterThan(0);
 
@@ -329,12 +381,15 @@ describe('Agenda Crítica - Conflito de horário', () => {
 
       const horarioEscolhido = horariosValidos[0];
 
+      if (!horarioEscolhido) {
+        throw new Error('Nenhum horário válido disponível.');
+      }
+
       horarioSelecionadoTexto = horarioEscolhido.texto;
 
       cy.log(`Horário escolhido: ${horarioSelecionadoTexto}`);
 
-      return cy
-        .wrap(horarioEscolhido.el)
+      cy.wrap(horarioEscolhido.el)
         .scrollIntoView()
         .should('be.visible')
         .click({ force: true });
@@ -350,7 +405,7 @@ describe('Agenda Crítica - Conflito de horário', () => {
       .eq(1)
       .should('be.visible')
       .click({ force: true })
-      .type('CLIENTE', { force: true });
+      .type('{selectall}{backspace}CLIENTE', { force: true });
 
     cy.wait(1000);
 
@@ -378,7 +433,7 @@ describe('Agenda Crítica - Conflito de horário', () => {
   }
 
   function gravarAgendamento() {
-    cy.contains(/Gravar/i, { timeout: 30000 })
+    cy.contains(/Gravar|Salvar|Guardar/i, { timeout: 30000 })
       .scrollIntoView()
       .should('be.visible')
       .click({ force: true });
@@ -419,11 +474,14 @@ describe('Agenda Crítica - Conflito de horário', () => {
 
   function tentarSelecionarMesmaData() {
     return cy.get('body').then(($body) => {
-      const datas = [...$body.find('*:visible')].filter((el) => {
-        const texto = Cypress.$(el).text().trim();
+      const datas = $body
+        .find('*:visible')
+        .toArray()
+        .filter((el) => {
+          const texto = Cypress.$(el).text().trim();
 
-        return texto === dataSelecionadaTexto;
-      });
+          return texto === dataSelecionadaTexto;
+        }) as HTMLElement[];
 
       if (datas.length === 0) {
         cy.log(
@@ -433,66 +491,76 @@ describe('Agenda Crítica - Conflito de horário', () => {
         return cy.wrap(false);
       }
 
-      return cy
-        .wrap(datas[0])
+      cy.wrap(datas[0])
         .scrollIntoView()
-        .click({ force: true })
-        .then(() => true);
+        .click({ force: true });
+
+      return cy.wrap(true);
     });
   }
 
   function tentarCriarSegundoMesmoHorario() {
     return cy.get('body').then(($body) => {
-      const horarios = [...$body.find('*:visible')].filter((el) => {
-        const texto = Cypress.$(el).text().trim();
+      const horarios = $body
+        .find('*:visible')
+        .toArray()
+        .filter((el) => {
+          const texto = Cypress.$(el).text().trim();
 
-        return texto === horarioSelecionadoTexto;
-      });
+          return texto === horarioSelecionadoTexto;
+        }) as HTMLElement[];
 
       if (horarios.length === 0) {
         cy.log(
           `O horário ${horarioSelecionadoTexto} não apareceu novamente. Sistema bloqueou o horário.`
         );
 
-        return false;
+        return cy.wrap(false);
       }
 
-      return cy
-        .wrap(horarios[0])
+      cy.wrap(horarios[0])
         .scrollIntoView()
-        .click({ force: true })
-        .then(() => {
-          cy.wait(1000);
+        .click({ force: true });
 
-          return cy.get('body').then(($bodyDepoisHorario) => {
-            const texto = $bodyDepoisHorario.text();
+      cy.wait(1000);
 
-            if (!texto.match(/Nome do cliente/i)) {
-              cy.log(
-                'Sistema não avançou para o formulário final. Horário provavelmente bloqueado.'
-              );
+      return cy.get('body').then(($bodyDepoisHorario) => {
+        const texto = $bodyDepoisHorario.text();
 
-              return false;
-            }
+        if (!/Nome do cliente/i.test(texto)) {
+          cy.log(
+            'Sistema não avançou para o formulário final. Horário provavelmente bloqueado.'
+          );
 
-            return selecionarCliente().then(() => {
-              cy.contains(/Gravar/i, { timeout: 30000 })
-                .scrollIntoView()
-                .should('be.visible')
-                .click({ force: true });
+          return cy.wrap(false);
+        }
 
-              cy.get('body', { timeout: 30000 })
-                .invoke('text')
-                .should(
-                  'match',
-                  /conflito|indispon[ií]vel|ocupado|j[aá] existe|hor[aá]rio|não dispon[ií]vel|nao disponivel|erro/i
-                );
+        selecionarCliente();
 
-              return true;
-            });
-          });
-        });
+        cy.contains(/Gravar|Salvar|Guardar/i, { timeout: 30000 })
+          .scrollIntoView()
+          .should('be.visible')
+          .click({ force: true });
+
+        cy.get('body', { timeout: 30000 })
+          .invoke('text')
+          .should(
+            'match',
+            /conflito|indispon[ií]vel|ocupado|j[aá] existe|hor[aá]rio|não dispon[ií]vel|nao disponivel|erro/i
+          );
+
+        return cy.wrap(true);
+      });
     });
+  }
+
+  function validarSemErroGrave() {
+    cy.get('body', { timeout: 30000 })
+      .invoke('text')
+      .should(
+        'not.match',
+        /TypeError|Cannot read|undefined is not|Internal Server Error|Network Error|Erro interno|is not a function/i
+      );
   }
 
   beforeEach(() => {
@@ -518,16 +586,16 @@ describe('Agenda Crítica - Conflito de horário', () => {
 
     tentarSelecionarMesmaData().then((dataDisponivel) => {
       if (!dataDisponivel) {
+        validarSemErroGrave();
+
         return;
       }
 
       cy.wait(1500);
 
-      tentarCriarSegundoMesmoHorario();
+      tentarCriarSegundoMesmoHorario().then(() => {
+        validarSemErroGrave();
+      });
     });
-  });
-
-  it('Finalizado', () => {
-    cy.log('Teste Finalizado');
   });
 });

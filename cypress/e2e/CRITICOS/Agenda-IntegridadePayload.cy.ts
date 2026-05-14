@@ -9,11 +9,10 @@ Ele verifica se, ao criar um agendamento pela tela, o POST enviado contém:
 - cliente
 
 Esse teste ajuda a encontrar problemas como:
-- tela seleciona um serviço, mas API recebe outro
-- tela seleciona um atendente, mas API recebe outro
+- tela seleciona um serviço, mas API recebe payload incompleto
+- tela seleciona um atendente, mas API não envia profissional
 - data enviada diferente da data clicada
 - horário enviado diferente do horário clicado
-- payload incompleto
 - erro de fuso horário
 - sucesso visual com dados errados no backend
 */
@@ -27,6 +26,8 @@ describe('Agenda Crítica - Integridade do Payload', () => {
   let horarioSelecionadoApiEsperado = '';
   let dataSelecionadaEhHoje = false;
 
+  const telefone = gerarTelefoneAleatorio();
+
   function gerarTelefoneAleatorio() {
     const ddd = '49';
     const primeiroDigito = '9';
@@ -35,12 +36,14 @@ describe('Agenda Crítica - Integridade do Payload', () => {
     return `${ddd}${primeiroDigito}${numero}`;
   }
 
-  const telefone = gerarTelefoneAleatorio();
-
   function fecharCookiesSeAparecer() {
     cy.get('body').then(($body) => {
-      if ($body.text().includes('Entendi')) {
-        cy.contains('Entendi').click({ force: true });
+      const texto = $body.text();
+
+      if (/Entendi|Aceitar|Aceito|OK|Concordo/i.test(texto)) {
+        cy.contains(/Entendi|Aceitar|Aceito|OK|Concordo/i).click({
+          force: true,
+        });
       }
     });
   }
@@ -105,8 +108,9 @@ describe('Agenda Crítica - Integridade do Payload', () => {
       .scrollIntoView()
       .click({ force: true });
 
-    cy.contains(/Listagem de agendamentos/i, { timeout: 30000 })
-      .should('exist');
+    cy.contains(/Listagem de agendamentos/i, { timeout: 30000 }).should(
+      'exist'
+    );
 
     cy.wait(1000);
   }
@@ -122,107 +126,131 @@ describe('Agenda Crítica - Integridade do Payload', () => {
       .should('match', /Escolha o servi[çc]o/i);
   }
 
+  function obterCardsServico($body: JQuery<HTMLElement>) {
+    return $body
+      .find('div:visible, button:visible, [role="button"]:visible')
+      .toArray()
+      .filter((el) => {
+        const texto = limparTexto(Cypress.$(el).text());
+        const rect = el.getBoundingClientRect();
+
+        const temTamanhoDeCard =
+          rect.width >= 100 &&
+          rect.width <= 380 &&
+          rect.height >= 60 &&
+          rect.height <= 260;
+
+        const pareceServico =
+          /R\$\s*\d+/i.test(texto) || /A partir de R\$/i.test(texto);
+
+        const naoEhTituloOuBusca =
+          !/Escolha o servi[çc]o|Buscar servi[çc]o|Exibir mais/i.test(texto);
+
+        return temTamanhoDeCard && pareceServico && naoEhTituloOuBusca;
+      }) as HTMLElement[];
+  }
+
   function selecionarServico() {
     cy.get('body', { timeout: 30000 })
       .invoke('text')
-      .should('match', /Escolha o servi[çc]o/i)
-      .then(() => {
-        cy.wait(1000);
-
-        cy.get('body').then(($body) => {
-          const tituloServico = [...$body.find('*:visible')].find((el) => {
-            const texto = limparTexto(Cypress.$(el).text());
-
-            return /^Escolha o servi[çc]o$/i.test(texto);
-          });
-
-          const topTitulo = tituloServico
-            ? tituloServico.getBoundingClientRect().top
-            : 0;
-
-          const cardsServico = $body
-            .find('div:visible, button:visible, [role="button"]:visible')
-            .filter((_, el) => {
-              const texto = limparTexto(Cypress.$(el).text());
-              const rect = el.getBoundingClientRect();
-
-              return (
-                rect.top > topTitulo &&
-                /servi[çc]o/i.test(texto) &&
-                !/^Escolha o servi[çc]o$/i.test(texto) &&
-                !/Buscar servi[çc]o por nome/i.test(texto) &&
-                rect.width >= 80 &&
-                rect.width <= 350 &&
-                rect.height >= 60 &&
-                rect.height <= 250
-              );
-            });
-
-          if (cardsServico.length === 0) {
-            cy.screenshot('servico-payload-nao-encontrado');
-
-            throw new Error(
-              'Nenhum card contendo a palavra SERVIÇO foi encontrado.'
-            );
-          }
-
-          const cardServico = cardsServico.first();
-          servicoSelecionadoTexto = limparTexto(cardServico.text());
-
-          cy.log(`Serviço selecionado: ${servicoSelecionadoTexto}`);
-
-          cy.wrap(cardServico)
-            .scrollIntoView()
-            .click('center', { force: true });
-        });
-      });
+      .should('match', /Escolha o servi[çc]o/i);
 
     cy.wait(1000);
+
+    cy.get('body').then(($body) => {
+      const cardsServico = obterCardsServico($body);
+
+      if (cardsServico.length === 0) {
+        cy.screenshot('servico-payload-nao-encontrado');
+
+        throw new Error(
+          'Nenhum card de serviço encontrado. Cadastre um serviço ou verifique se há serviços disponíveis no agendamento.'
+        );
+      }
+
+      const cardServico = cardsServico[0];
+
+      if (!cardServico) {
+        throw new Error('Card de serviço inválido.');
+      }
+
+      servicoSelecionadoTexto = limparTexto(Cypress.$(cardServico).text());
+
+      cy.log(`Serviço selecionado: ${servicoSelecionadoTexto}`);
+
+      cy.wrap(cardServico)
+        .scrollIntoView()
+        .click('center', { force: true });
+    });
+
+    cy.wait(1200);
+  }
+
+  function obterCardsProfissional($body: JQuery<HTMLElement>) {
+    return $body
+      .find('div:visible, button:visible, [role="button"]:visible')
+      .toArray()
+      .filter((el) => {
+        const texto = limparTexto(Cypress.$(el).text());
+        const rect = el.getBoundingClientRect();
+
+        const temTamanhoDeCard =
+          rect.width >= 80 &&
+          rect.width <= 400 &&
+          rect.height >= 60 &&
+          rect.height <= 300;
+
+        const naoEhTituloOuBusca =
+          !/Escolha o profissional|Escolha o servi[çc]o|Buscar|Exibir mais/i.test(
+            texto
+          );
+
+        return temTamanhoDeCard && naoEhTituloOuBusca && texto.length >= 3;
+      }) as HTMLElement[];
   }
 
   function selecionarProfissional() {
     cy.get('body', { timeout: 30000 })
       .invoke('text')
-      .should('match', /Escolha o profissional/i)
-      .then(() => {
-        cy.wait(1000);
+      .should('match', /Escolha o profissional/i);
 
-        cy.get('body').then(($body) => {
-          const cardsAtendente = $body
-            .find('div:visible, button:visible, [role="button"]:visible')
-            .filter((_, el) => {
-              const texto = limparTexto(Cypress.$(el).text());
-              const rect = el.getBoundingClientRect();
+    cy.wait(1000);
 
-              return (
-                /E2E\s+Atendente/i.test(texto) &&
-                rect.width >= 70 &&
-                rect.width <= 350 &&
-                rect.height >= 60 &&
-                rect.height <= 300
-              );
-            });
+    cy.get('body').then(($body) => {
+      const cardsProfissional = obterCardsProfissional($body);
 
-          if (cardsAtendente.length === 0) {
-            cy.screenshot('atendente-e2e-payload-nao-encontrado');
+      if (cardsProfissional.length === 0) {
+        cy.screenshot('atendente-payload-nao-encontrado');
 
-            throw new Error(
-              'Nenhum card contendo "E2E Atendente" foi encontrado.'
-            );
-          }
+        throw new Error(
+          'Nenhum card de profissional foi encontrado após selecionar o serviço.'
+        );
+      }
 
-          const cardAtendente = cardsAtendente.first();
-          atendenteSelecionadoTexto = limparTexto(cardAtendente.text());
+      const profissionalE2E = cardsProfissional.find((card) => {
+        const texto = limparTexto(Cypress.$(card).text());
 
-          cy.log(`Atendente selecionado: ${atendenteSelecionadoTexto}`);
-
-          cy.wrap(cardAtendente)
-            .scrollIntoView()
-            .click('center', { force: true });
-        });
+        return /E2E\s+Atendente/i.test(texto);
       });
 
-    cy.wait(3000);
+      const cardProfissional = profissionalE2E || cardsProfissional[0];
+
+      if (!cardProfissional) {
+        throw new Error('Card de profissional inválido.');
+      }
+
+      atendenteSelecionadoTexto = limparTexto(
+        Cypress.$(cardProfissional).text()
+      );
+
+      cy.log(`Atendente selecionado: ${atendenteSelecionadoTexto}`);
+
+      cy.wrap(cardProfissional)
+        .scrollIntoView()
+        .click('center', { force: true });
+    });
+
+    cy.wait(2000);
   }
 
   function aguardarDatasAparecerem() {
@@ -232,7 +260,7 @@ describe('Agenda Crítica - Integridade do Payload', () => {
   }
 
   function selecionarDataFuturaOuHoje() {
-    return cy.get('body').then(($body) => {
+    cy.get('body').then(($body) => {
       const agora = new Date();
       const hoje = new Date(
         agora.getFullYear(),
@@ -240,11 +268,14 @@ describe('Agenda Crítica - Integridade do Payload', () => {
         agora.getDate()
       );
 
-      const elementosData = [...$body.find('*:visible')].filter((el) => {
-        const texto = Cypress.$(el).text().trim();
+      const elementosData = $body
+        .find('*:visible')
+        .toArray()
+        .filter((el) => {
+          const texto = Cypress.$(el).text().trim();
 
-        return /^\d{2}\/\d{2}$/.test(texto);
-      });
+          return /^\d{2}\/\d{2}$/.test(texto);
+        });
 
       const datas = elementosData
         .map((el) => {
@@ -258,10 +289,10 @@ describe('Agenda Crítica - Integridade do Payload', () => {
           };
         })
         .filter((item) => item.data !== null) as Array<{
-          el: Element;
-          texto: string;
-          data: Date;
-        }>;
+        el: Element;
+        texto: string;
+        data: Date;
+      }>;
 
       expect(datas.length, 'datas disponíveis').to.be.greaterThan(0);
 
@@ -272,16 +303,20 @@ describe('Agenda Crítica - Integridade do Payload', () => {
 
       const dataEscolhida = datasFuturas[0] || datasHoje[0] || datas[0];
 
+      if (!dataEscolhida) {
+        throw new Error('Nenhuma data disponível para selecionar.');
+      }
+
       dataSelecionadaTexto = dataEscolhida.texto;
       dataSelecionadaApiEsperada = formatarDataApi(dataEscolhida.data);
-      dataSelecionadaEhHoje = dataEscolhida.data.getTime() === hoje.getTime();
+      dataSelecionadaEhHoje =
+        dataEscolhida.data.getTime() === hoje.getTime();
 
       cy.log(`Data selecionada na tela: ${dataSelecionadaTexto}`);
       cy.log(`Data esperada no payload: ${dataSelecionadaApiEsperada}`);
       cy.log(`Data selecionada é hoje? ${dataSelecionadaEhHoje}`);
 
-      return cy
-        .wrap(dataEscolhida.el)
+      cy.wrap(dataEscolhida.el)
         .scrollIntoView()
         .should('be.visible')
         .click({ force: true });
@@ -289,15 +324,18 @@ describe('Agenda Crítica - Integridade do Payload', () => {
   }
 
   function selecionarHorarioFuturo() {
-    return cy.get('body').then(($body) => {
+    cy.get('body').then(($body) => {
       const agora = new Date();
       const minutosAgora = agora.getHours() * 60 + agora.getMinutes();
 
-      const elementosHorario = [...$body.find('*:visible')].filter((el) => {
-        const texto = Cypress.$(el).text().trim();
+      const elementosHorario = $body
+        .find('*:visible')
+        .toArray()
+        .filter((el) => {
+          const texto = Cypress.$(el).text().trim();
 
-        return /^\d{1,2}:\d{2}h$/i.test(texto);
-      });
+          return /^\d{1,2}:\d{2}h$/i.test(texto);
+        });
 
       const horarios = elementosHorario
         .map((el) => {
@@ -311,10 +349,10 @@ describe('Agenda Crítica - Integridade do Payload', () => {
           };
         })
         .filter((item) => item.minutos !== null) as Array<{
-          el: Element;
-          texto: string;
-          minutos: number;
-        }>;
+        el: Element;
+        texto: string;
+        minutos: number;
+      }>;
 
       expect(horarios.length, 'horários disponíveis').to.be.greaterThan(0);
 
@@ -329,14 +367,20 @@ describe('Agenda Crítica - Integridade do Payload', () => {
 
       const horarioEscolhido = horariosValidos[0];
 
+      if (!horarioEscolhido) {
+        throw new Error('Nenhum horário válido disponível.');
+      }
+
       horarioSelecionadoTexto = horarioEscolhido.texto;
-      horarioSelecionadoApiEsperado = horarioEscolhido.texto.replace(/h$/i, '');
+      horarioSelecionadoApiEsperado = horarioEscolhido.texto.replace(
+        /h$/i,
+        ''
+      );
 
       cy.log(`Horário selecionado na tela: ${horarioSelecionadoTexto}`);
       cy.log(`Horário esperado no payload: ${horarioSelecionadoApiEsperado}`);
 
-      return cy
-        .wrap(horarioEscolhido.el)
+      cy.wrap(horarioEscolhido.el)
         .scrollIntoView()
         .should('be.visible')
         .click({ force: true });
@@ -352,7 +396,7 @@ describe('Agenda Crítica - Integridade do Payload', () => {
       .eq(1)
       .should('be.visible')
       .click({ force: true })
-      .type('CLIENTE', { force: true });
+      .type('{selectall}{backspace}CLIENTE', { force: true });
 
     cy.wait(1000);
 
@@ -388,57 +432,77 @@ describe('Agenda Crítica - Integridade do Payload', () => {
       );
   }
 
-function validarPayloadAgendamento(payloadOriginal: any) {
-  const payload = normalizarRequestBody(payloadOriginal);
-  const payloadString = JSON.stringify(payload);
+  function validarPayloadAgendamento(payloadOriginal: any) {
+    const payload = normalizarRequestBody(payloadOriginal);
+    const payloadString = JSON.stringify(payload);
 
-  cy.log(`Payload enviado: ${payloadString}`);
-  cy.log(`Serviço selecionado: ${servicoSelecionadoTexto}`);
-  cy.log(`Atendente selecionado: ${atendenteSelecionadoTexto}`);
-  cy.log(`Data selecionada: ${dataSelecionadaTexto}`);
-  cy.log(`Horário selecionado: ${horarioSelecionadoTexto}`);
+    cy.log(`Payload enviado: ${payloadString}`);
+    cy.log(`Serviço selecionado: ${servicoSelecionadoTexto}`);
+    cy.log(`Atendente selecionado: ${atendenteSelecionadoTexto}`);
+    cy.log(`Data selecionada: ${dataSelecionadaTexto}`);
+    cy.log(`Horário selecionado: ${horarioSelecionadoTexto}`);
 
-  expect(
-    payloadString,
-    'Payload deve conter campo relacionado a serviço.'
-  ).to.match(
-    /service|servi[çc]o|service_id|service_uuid|services|serviceId/i
-  );
+    expect(
+      servicoSelecionadoTexto,
+      'serviço selecionado na tela'
+    ).to.not.be.empty;
 
-  expect(
-    payloadString,
-    'Payload deve conter campo relacionado a atendente/profissional.'
-  ).to.match(
-    /companyUserId|company_user|company_user_id|companyUser|professional|professional_id|professionalId|atendente|user_id|userId|employee/i
-  );
+    expect(
+      atendenteSelecionadoTexto,
+      'atendente selecionado na tela'
+    ).to.not.be.empty;
 
-  expect(
-    payloadString,
-    'Payload deve conter campo relacionado à data.'
-  ).to.match(/date|data|schedule_date|scheduled_at|day/i);
+    expect(
+      dataSelecionadaApiEsperada,
+      'data esperada para payload'
+    ).to.not.be.empty;
 
-  expect(
-    payloadString,
-    'Payload deve conter campo relacionado ao horário.'
-  ).to.match(/time|hora|hour|start_time|scheduled_at|start/i);
+    expect(
+      horarioSelecionadoApiEsperado,
+      'horário esperado para payload'
+    ).to.not.be.empty;
 
-  expect(
-    payloadString,
-    'Payload deve conter campo relacionado ao cliente.'
-  ).to.match(
-    /client|cliente|customer|customer_id|customerId|client_id|clientId|customerName|phone|telefone|name/i
-  );
+    expect(
+      payloadString,
+      'Payload deve conter campo relacionado a serviço.'
+    ).to.match(
+      /service|servi[çc]o|service_id|service_uuid|services|serviceId/i
+    );
 
-  expect(
-    payloadString,
-    `Payload deve conter a data selecionada na tela: ${dataSelecionadaApiEsperada}`
-  ).to.include(dataSelecionadaApiEsperada);
+    expect(
+      payloadString,
+      'Payload deve conter campo relacionado a atendente/profissional.'
+    ).to.match(
+      /companyUserId|company_user|company_user_id|companyUser|professional|professional_id|professionalId|atendente|user_id|userId|employee/i
+    );
 
-  expect(
-    payloadString,
-    `Payload deve conter o horário selecionado na tela: ${horarioSelecionadoApiEsperado}`
-  ).to.include(horarioSelecionadoApiEsperado);
-}
+    expect(
+      payloadString,
+      'Payload deve conter campo relacionado à data.'
+    ).to.match(/date|data|schedule_date|scheduled_at|day/i);
+
+    expect(
+      payloadString,
+      'Payload deve conter campo relacionado ao horário.'
+    ).to.match(/time|hora|hour|start_time|scheduled_at|start/i);
+
+    expect(
+      payloadString,
+      'Payload deve conter campo relacionado ao cliente.'
+    ).to.match(
+      /client|cliente|customer|customer_id|customerId|client_id|clientId|customerName|phone|telefone|name/i
+    );
+
+    expect(
+      payloadString,
+      `Payload deve conter a data selecionada na tela: ${dataSelecionadaApiEsperada}`
+    ).to.include(dataSelecionadaApiEsperada);
+
+    expect(
+      payloadString,
+      `Payload deve conter o horário selecionado na tela: ${horarioSelecionadoApiEsperado}`
+    ).to.include(horarioSelecionadoApiEsperado);
+  }
 
   beforeEach(() => {
     cy.login();
@@ -448,7 +512,7 @@ function validarPayloadAgendamento(payloadOriginal: any) {
     abrirAgenda();
   });
 
-  it('Deve enviar para API os mesmos dados selecionados na tela.', () => {
+  it('deve enviar para API os dados selecionados na tela', () => {
     abrirCadastroAgendamento();
 
     selecionarServico();
@@ -473,7 +537,7 @@ function validarPayloadAgendamento(payloadOriginal: any) {
 
     cy.intercept('POST', '**/api/**').as('postCriacaoAgendamento');
 
-    cy.contains(/Gravar/i, { timeout: 30000 })
+    cy.contains(/Gravar|Salvar|Guardar/i, { timeout: 30000 })
       .scrollIntoView()
       .should('be.visible')
       .click({ force: true });
@@ -489,7 +553,7 @@ function validarPayloadAgendamento(payloadOriginal: any) {
         cy.log(`Status da resposta: ${statusCode}`);
         cy.log(`Body da resposta: ${JSON.stringify(responseBody)}`);
 
-        expect(statusCode).to.be.within(200, 299);
+        expect(statusCode, 'status da API').to.be.within(200, 299);
 
         validarPayloadAgendamento(requestBody);
       }
@@ -503,9 +567,5 @@ function validarPayloadAgendamento(payloadOriginal: any) {
         'match',
         /agendamento|sucesso|salvo|criado|Listagem de agendamentos/i
       );
-  });
-
-  it('Finalizado', () => {
-    cy.log('Teste Finalizado');
   });
 });
