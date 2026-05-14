@@ -1,19 +1,22 @@
-import { obterEmpresaParaguaiAleatoria } from '../../support/data/rucs-paraguai';
+import {
+  empresasParaguai,
+  formatarRucParaguai,
+} from '../../support/data/rucs-paraguai';
 
 describe('Cadastro completo - Usuário e empresa Paraguai', () => {
 
-const timestamp = Date.now();
+const arquivoUsuariosGerados = 'cypress/fixtures/usuarios-gerados.json';
 
-const empresaSelecionada = obterEmpresaParaguaiAleatoria(timestamp);
+let timestamp = Date.now();
 
-const nomeUsuario = `Usuario Paraguai ${timestamp}`;
-const emailUsuario = `usuario.paraguai.${timestamp}@teste.com`;
-const senhaUsuario = '12345678';
+let nomeUsuario = '';
+let emailUsuario = '';
+let senhaUsuario = '12345678';
 
-const razaoSocial = `${empresaSelecionada.razao} E2E ${timestamp}`;
-const fantasia = `Fantasia Paraguai ${timestamp}`;
-const rucValido = empresaSelecionada.rucCompleto;
-const slug = `py-${timestamp}`;
+let razaoSocial = '';
+let fantasia = '';
+let rucValido = '';
+let slug = '';
     
 
   function fecharCookiesSeAparecer() {
@@ -33,22 +36,28 @@ const slug = `py-${timestamp}`;
     });
   }
 
-  function preencherInputVisivel(index: number, valor: string) {
-    cy.get('input:visible', { timeout: 30000 })
-      .eq(index)
-      .should('be.visible')
-      .click({ force: true });
+  function preencherInputVisivel(index: number, valor: string, nomeCampo = `input ${index}`) {
+  const valorFinal = String(valor || '').trim();
 
-    cy.get('input:visible')
-      .eq(index)
-      .type('{selectall}{backspace}', { force: true });
-
-    cy.wait(200);
-
-    cy.get('input:visible')
-      .eq(index)
-      .type(valor, { force: true, delay: 20 });
+  if (!valorFinal) {
+    throw new Error(`Valor vazio para o campo: ${nomeCampo}`);
   }
+
+  cy.get('input:visible', { timeout: 30000 })
+    .eq(index)
+    .should('be.visible')
+    .click({ force: true });
+
+  cy.get('input:visible')
+    .eq(index)
+    .type('{selectall}{backspace}', { force: true });
+
+  cy.wait(200);
+
+  cy.get('input:visible')
+    .eq(index)
+    .type(valorFinal, { force: true, delay: 20 });
+}
 
   function selecionarComboPorIndice(index: number, opcao: RegExp) {
     cy.get('.q-field:visible', { timeout: 30000 })
@@ -202,33 +211,33 @@ const slug = `py-${timestamp}`;
   }
 
   function cadastrarUsuario() {
-    Cypress.log({
-      name: 'E-mail criado',
-      message: emailUsuario,
-    });
+  Cypress.log({
+    name: 'E-mail criado',
+    message: emailUsuario,
+  });
 
-    Cypress.log({
-      name: 'RUC válido usado',
-      message: rucValido,
-    });
+  Cypress.log({
+    name: 'RUC válido usado',
+    message: rucValido,
+  });
 
-    cy.log(`E-mail criado: ${emailUsuario}`);
-    cy.log(`RUC usado: ${rucValido}`);
+  cy.log(`E-mail criado: ${emailUsuario}`);
+  cy.log(`RUC usado: ${rucValido}`);
 
-    preencherInputVisivel(0, nomeUsuario);
-    preencherInputVisivel(1, emailUsuario);
-    preencherInputVisivel(2, senhaUsuario);
-    preencherInputVisivel(3, senhaUsuario);
+  preencherInputVisivel(0, nomeUsuario, 'Nome do usuário');
+  preencherInputVisivel(1, emailUsuario, 'E-mail do usuário');
+  preencherInputVisivel(2, senhaUsuario, 'Senha');
+  preencherInputVisivel(3, senhaUsuario, 'Confirmação de senha');
 
-    clicarBotaoGravarAtual();
+  clicarBotaoGravarAtual();
 
-    cy.get('body', { timeout: 30000 })
-      .invoke('text')
-      .should(
-        'match',
-        /Informa[çc][õo]es da empresa|Información de la empresa|Raz[aãóo]+ social|Razón social|Fantasia|Nombre comercial|Pa[ií]s|Moeda|Moneda/i
-      );
-  }
+  cy.get('body', { timeout: 30000 })
+    .invoke('text')
+    .should(
+      'match',
+      /Informa[çc][õo]es da empresa|Información de la empresa|Raz[aãóo]+ social|Razón social|Fantasia|Nombre comercial|Pa[ií]s|Moeda|Moneda/i
+    );
+}
 
   function preencherRucParaguai() {
     cy.get('input:visible', { timeout: 30000 }).then(($inputs) => {
@@ -258,67 +267,58 @@ const slug = `py-${timestamp}`;
   }
 
   function preencherInformacoesEmpresaParaguai() {
-    cy.get('body', { timeout: 30000 })
-      .invoke('text')
-      .should(
-        'match',
-        /Información de la empresa|Informa[çc][õo]es da empresa|Razón social|Raz[aãóo]+ social|Nombre comercial|Fantasia|Pa[ií]s|Moneda|Moeda/i
-      );
+  cy.get('body', { timeout: 30000 })
+    .invoke('text')
+    .should(
+      'match',
+      /Información de la empresa|Informa[çc][õo]es da empresa|Razón social|Raz[aãóo]+ social|Nombre comercial|Fantasia|Pa[ií]s|Moneda|Moeda/i
+    );
 
-    // Razón social
-    preencherInputVisivel(0, razaoSocial);
+  preencherInputVisivel(0, razaoSocial, 'Razão social');
+  preencherInputVisivel(1, fantasia, 'Fantasia');
 
-    // Nombre comercial / Fantasia
-    preencherInputVisivel(1, fantasia);
+  selecionarComboPorIndice(2, /Paraguay|Paraguai/i);
 
-    // País: Paraguay
-    selecionarComboPorIndice(2, /Paraguay|Paraguai/i);
+  selecionarComboPorIndice(3, /Guarani|Guaran[ií]s|PYG|₲|G\./i);
 
-    // Moneda: Guarani
-    selecionarComboPorIndice(3, /Guarani|Guaran[ií]s|PYG|₲|G\./i);
+  preencherRucParaguai();
 
-    // RUC válido com dígito verificador
-    preencherRucParaguai();
+  clicarBotaoGravarAtual();
 
-    clicarBotaoGravarAtual();
-
-    cy.get('body', { timeout: 30000 })
-      .invoke('text')
-      .should(
-        'match',
-        /Configura[çc][aã]o do site|Configuraci[oó]n del sitio|URL do site|URL del sitio|Segmento|dados iniciais|datos iniciales/i
-      );
-  }
+  cy.get('body', { timeout: 30000 })
+    .invoke('text')
+    .should(
+      'match',
+      /Configura[çc][aã]o do site|Configuraci[oó]n del sitio|URL do site|URL del sitio|Segmento|dados iniciais|datos iniciales/i
+    );
+}
 
   function preencherConfiguracaoSite() {
-    cy.get('body', { timeout: 30000 })
-      .invoke('text')
-      .should(
-        'match',
-        /Configura[çc][aã]o do site|Configuraci[oó]n del sitio|URL do site|URL del sitio|Segmento/i
-      );
+  cy.get('body', { timeout: 30000 })
+    .invoke('text')
+    .should(
+      'match',
+      /Configura[çc][aã]o do site|Configuraci[oó]n del sitio|URL do site|URL del sitio|Segmento/i
+    );
 
-    // Slug / URL do site
-    preencherInputVisivel(0, slug);
+  preencherInputVisivel(0, slug, 'Slug');
 
-    // Segmento: Barbearia
-    selecionarComboPorIndice(1, /Barbearia|Barber[ií]a/i);
+  selecionarComboPorIndice(1, /Barbearia|Barber[ií]a/i);
 
-    clicarBotaoGravarAtual();
+  clicarBotaoGravarAtual();
 
-    cy.get('body', { timeout: 30000 })
-      .invoke('text')
-      .should(
-        'match',
-        /Dashboard|Agenda|Clientes|Configura[çc][õo]es|Configuraciones|Bom dia|Boa tarde|Boa noite|Buenos d[ií]as|Buenas tardes|Buenas noches|sucesso|éxito|exitosamente/i
-      );
-    salvarUsuarioGeradoNoJson();
-  }
+  cy.get('body', { timeout: 30000 })
+    .invoke('text')
+    .should(
+      'match',
+      /Dashboard|Agenda|Clientes|Configura[çc][õo]es|Configuraciones|Bom dia|Boa tarde|Boa noite|Buenos d[ií]as|Buenas tardes|Buenas noches|sucesso|éxito|exitosamente/i
+    );
 
-  function salvarUsuarioGeradoNoJson() {
-  const arquivo = 'cypress/fixtures/usuarios-gerados.json';
+  salvarUsuarioGeradoNoJson();
+}
 
-  const usuarioGerado = {
+function salvarUsuarioGeradoNoJson() {
+  const usuarioGerado: UsuarioGerado = {
     dataCriacao: new Date().toISOString(),
     pais: 'Paraguay',
     nomeUsuario,
@@ -330,20 +330,103 @@ const slug = `py-${timestamp}`;
     slug,
   };
 
-  cy.readFile(arquivo).then((usuariosExistentes) => {
-    const usuarios = Array.isArray(usuariosExistentes)
+  cy.readFile(arquivoUsuariosGerados).then((usuariosExistentes) => {
+    const usuarios: UsuarioGerado[] = Array.isArray(usuariosExistentes)
       ? usuariosExistentes
       : [];
 
+    const rucJaExiste = usuarios.some((usuario) => {
+      return normalizarRuc(usuario.documento || '') === normalizarRuc(rucValido);
+    });
+
+    if (rucJaExiste) {
+      throw new Error(`RUC já estava salvo no JSON: ${rucValido}`);
+    }
+
     usuarios.push(usuarioGerado);
 
-    cy.writeFile(arquivo, usuarios);
+    cy.writeFile(arquivoUsuariosGerados, usuarios);
 
     cy.log(`Usuário salvo no JSON: ${emailUsuario}`);
+    cy.log(`RUC salvo no JSON: ${rucValido}`);
   });
 }
 
-  it('deve cadastrar usuário, empresa do Paraguai e configuração inicial do site', () => {
+type UsuarioGerado = {
+  dataCriacao?: string;
+  pais?: string;
+  nomeUsuario?: string;
+  emailUsuario?: string;
+  senhaUsuario?: string;
+  razaoSocial?: string;
+  fantasia?: string;
+  documento?: string;
+  slug?: string;
+};
+
+function normalizarRuc(ruc: string) {
+  return String(ruc || '').replace(/\D/g, '');
+}
+
+function prepararDadosComRucNaoCadastrado() {
+  return cy.readFile(arquivoUsuariosGerados).then((usuariosExistentes) => {
+    const usuarios: UsuarioGerado[] = Array.isArray(usuariosExistentes)
+      ? usuariosExistentes
+      : [];
+
+    const rucsJaUsados = new Set(
+      usuarios
+        .map((usuario) => normalizarRuc(usuario.documento || ''))
+        .filter((ruc) => ruc.length > 0)
+    );
+
+    const empresasDisponiveis = empresasParaguai
+      .map((empresa) => {
+        const rucCompleto = formatarRucParaguai(empresa.ruc);
+
+        return {
+          ...empresa,
+          rucCompleto,
+        };
+      })
+      .filter((empresa) => {
+        return !rucsJaUsados.has(normalizarRuc(empresa.rucCompleto));
+      });
+
+    expect(
+      empresasDisponiveis.length,
+      'RUCs disponíveis ainda não cadastrados'
+    ).to.be.greaterThan(0);
+
+    const empresaSelecionada = Cypress._.sample(empresasDisponiveis);
+
+    if (!empresaSelecionada) {
+      throw new Error('Nenhum RUC disponível para cadastrar.');
+    }
+
+    timestamp = Date.now();
+
+    nomeUsuario = `Usuario Paraguai ${timestamp}`;
+    emailUsuario = `usuario.paraguai.${timestamp}@teste.com`;
+    senhaUsuario = '12345678';
+
+    razaoSocial = `${empresaSelecionada.razao} E2E ${timestamp}`;
+    fantasia = `Fantasia Paraguai ${timestamp}`;
+    rucValido = empresaSelecionada.rucCompleto;
+    slug = `py-${timestamp}`;
+
+    Cypress.log({
+      name: 'RUC selecionado',
+      message: rucValido,
+    });
+
+    cy.log(`RUC selecionado: ${rucValido}`);
+    cy.log(`E-mail criado: ${emailUsuario}`);
+  });
+}
+
+ it('deve cadastrar usuário, empresa do Paraguai e configuração inicial do site', () => {
+  prepararDadosComRucNaoCadastrado().then(() => {
     fazerLogoutSeNecessario();
 
     abrirCadastroUsuario();
@@ -354,4 +437,5 @@ const slug = `py-${timestamp}`;
 
     preencherConfiguracaoSite();
   });
+});
 });

@@ -42,5 +42,60 @@
     "fantasia": "Fantasia Paraguai 1778780080669",
     "documento": "80035462-1",
     "slug": "py-1778780080669"
+  },
+  {
+    "dataCriacao": "2026-05-14T17:49:50.246Z",
+    "pais": "Paraguay",
+    "nomeUsuario": "Usuario Paraguai 1778780990217",
+    "emailUsuario": "usuario.paraguai.1778780990217@teste.com",
+    "senhaUsuario": "12345678",
+    "razaoSocial": "IMPORTADORA COLONIAL SRL E2E 1778780990217",
+    "fantasia": "Fantasia Paraguai 1778780990217",
+    "documento": "80006331-7",
+    "slug": "py-1778780990217"
+  },
+  {
+    "dataCriacao": "2026-05-14T17:50:35.808Z",
+    "pais": "Paraguay",
+    "nomeUsuario": "Usuario Paraguai 1778781035780",
+    "emailUsuario": "usuario.paraguai.1778781035780@teste.com",
+    "senhaUsuario": "12345678",
+    "razaoSocial": "KSTEEL E.A.S. UNIPERSONAL E2E 1778781035780",
+    "fantasia": "Fantasia Paraguai 1778781035780",
+    "documento": "80120290-6",
+    "slug": "py-1778781035780"
+  },
+  {
+    "dataCriacao": "2026-05-14T17:51:05.755Z",
+    "pais": "Paraguay",
+    "nomeUsuario": "Usuario Paraguai 1778781065719",
+    "emailUsuario": "usuario.paraguai.1778781065719@teste.com",
+    "senhaUsuario": "12345678",
+    "razaoSocial": "GENIAL SHOP SRL E2E 1778781065719",
+    "fantasia": "Fantasia Paraguai 1778781065719",
+    "documento": "80069860-6",
+    "slug": "py-1778781065719"
+  },
+  {
+    "dataCriacao": "2026-05-14T17:51:59.120Z",
+    "pais": "Paraguay",
+    "nomeUsuario": "Usuario Paraguai 1778781119094",
+    "emailUsuario": "usuario.paraguai.1778781119094@teste.com",
+    "senhaUsuario": "12345678",
+    "razaoSocial": "RSS INMOBILIARIA E.A.S. E2E 1778781119094",
+    "fantasia": "Fantasia Paraguai 1778781119094",
+    "documento": "80128106-7",
+    "slug": "py-1778781119094"
+  },
+  {
+    "dataCriacao": "2026-05-14T17:53:24.631Z",
+    "pais": "Paraguay",
+    "nomeUsuario": "Usuario Paraguai 1778781204596",
+    "emailUsuario": "usuario.paraguai.1778781204596@teste.com",
+    "senhaUsuario": "12345678",
+    "razaoSocial": "REBUS IMPORT. EXPORT. SOCIEDAD ANONIMA E2E 1778781204596",
+    "fantasia": "Fantasia Paraguai 1778781204596",
+    "documento": "80106712-0",
+    "slug": "py-1778781204596"
   }
 ]
