@@ -1,3 +1,16 @@
+/*
+Tenta enviar uma mensagem de teste, mas somente se estiver Conectado
+
+Ele ajuda a encontrar problemas como:
+
+- Botão "Enviar mensagem de teste" não aparece
+- Sistema tenta enviar mesmo com WhatsApp desconectado
+- Clique no botão gera erro na tela
+- API de envio falha e quebra o frontend
+- Loading infinito após clicar
+- Mensagem de sucesso/erro não aparece
+*/
+
 describe('WhatsApp - Enviar mensagem de teste', () => {
   function fecharCookiesSeAparecer() {
     cy.get('body').then(($body) => {

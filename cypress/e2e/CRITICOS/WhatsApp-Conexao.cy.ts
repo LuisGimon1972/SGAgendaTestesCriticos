@@ -1,3 +1,15 @@
+/*
+Ele ajuda a detectar problemas como:
+
+- Aba WhatsApp não abre
+- Status não aparece
+- Sistema mostra conectado/desconectado errado
+- Botão de conectar/reconectar não aparece quando necessário
+- Erro JavaScript na tela
+- Tela branca
+- Falha visual no módulo de WhatsApp
+*/
+
 describe('WhatsApp - Teste de conexão', () => {
   function fecharCookiesSeAparecer() {
     cy.get('body').then(($body) => {

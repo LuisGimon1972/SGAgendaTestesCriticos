@@ -1,3 +1,16 @@
+/*
+Esse teste crítico avalia:
+- tela branca
+- loading infinito
+- botão invisível
+- botão fora da tela
+- botão coberto por outro elemento
+- erro JavaScript aparecendo na tela
+- tela quebrada ao trocar DIA / SEMANA / MÊS
+- cadastro de agendamento abrindo cortado
+- layout quebrado em desktop, tablet ou mobile
+*/
+
 describe('Agenda Crítica - Quebra visual', () => {
   function fecharCookiesSeAparecer() {
     cy.get('body').then(($body) => {
