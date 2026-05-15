@@ -130,5 +130,27 @@
     "fantasia": "Fantasia Paraguai 1778787161146",
     "documento": "80027062-2",
     "slug": "py-1778787161146"
+  },
+  {
+    "dataCriacao": "2026-05-14T20:50:34.722Z",
+    "pais": "Brasil",
+    "nomeUsuario": "Usuario 1778791834620",
+    "emailUsuario": "usuario.1778791834620@teste.com",
+    "senhaUsuario": "12345678",
+    "razaoSocial": "Barbearia 1778791834620",
+    "fantasia": "Fantasia 1778791834620",
+    "documento": "31.832.557/0001-12",
+    "slug": "site-1778791834620"
+  },
+  {
+    "dataCriacao": "2026-05-14T20:51:00.787Z",
+    "pais": "Paraguay",
+    "nomeUsuario": "Usuario Paraguai 1778791860742",
+    "emailUsuario": "usuario.paraguai.1778791860742@teste.com",
+    "senhaUsuario": "12345678",
+    "razaoSocial": "NORTE-SUR SOCIEDAD DE CAPITAL E INDUSTRIAL E2E 1778791860742",
+    "fantasia": "Fantasia Paraguai 1778791860742",
+    "documento": "80027985-9",
+    "slug": "py-1778791860742"
   }
 ]

@@ -34,10 +34,29 @@ describe('Agenda Crítica - Concorrência por duplo clique no Gravar', () => {
     cy.get('body').then(($body) => {
       const texto = $body.text();
 
-      if (/Entendi|Aceitar|Aceito|OK|Concordo/i.test(texto)) {
-        cy.contains(/Entendi|Aceitar|Aceito|OK|Concordo/i).click({
-          force: true,
+      const apareceuCookies =
+        /cookies|utilizamos cookies|melhorar sua experiência|política de privacidade/i.test(
+          texto
+        );
+
+      if (!apareceuCookies) {
+        return;
+      }
+
+      const botaoCookie = $body
+        .find('button:visible, .q-btn:visible, [role="button"]:visible')
+        .toArray()
+        .find((botao) => {
+          const textoBotao = Cypress.$(botao)
+            .text()
+            .replace(/\s+/g, ' ')
+            .trim();
+
+          return /Entendi|Aceitar|Aceito|OK|Concordo/i.test(textoBotao);
         });
+
+      if (botaoCookie) {
+        cy.wrap(botaoCookie).click({ force: true });
       }
     });
   }
@@ -76,6 +95,8 @@ describe('Agenda Crítica - Concorrência por duplo clique no Gravar', () => {
     cy.contains(/Listagem de agendamentos/i, { timeout: 30000 }).should(
       'be.visible'
     );
+
+    fecharCookiesSeAparecer();
   }
 
   function abrirCadastroAgendamento() {
@@ -87,6 +108,8 @@ describe('Agenda Crítica - Concorrência por duplo clique no Gravar', () => {
     cy.get('body', { timeout: 30000 })
       .invoke('text')
       .should('match', /Escolha o servi[çc]o/i);
+
+    fecharCookiesSeAparecer();
   }
 
   function parseDataDiaMes(texto: string) {
@@ -117,26 +140,58 @@ describe('Agenda Crítica - Concorrência por duplo clique no Gravar', () => {
   }
 
   function obterCardsServico($body: JQuery<HTMLElement>) {
+    const tituloServico = $body
+      .find('*:visible')
+      .toArray()
+      .find((el) => {
+        const texto = Cypress.$(el)
+          .text()
+          .replace(/\s+/g, ' ')
+          .trim();
+
+        return /^Escolha o servi[çc]o$/i.test(texto);
+      });
+
+    const topTitulo = tituloServico
+      ? tituloServico.getBoundingClientRect().top
+      : 0;
+
     return $body
       .find('div:visible, button:visible, [role="button"]:visible')
       .toArray()
       .filter((el) => {
-        const texto = Cypress.$(el).text().replace(/\s+/g, ' ').trim();
+        const texto = Cypress.$(el)
+          .text()
+          .replace(/\s+/g, ' ')
+          .trim();
+
         const rect = el.getBoundingClientRect();
 
+        const depoisDoTitulo = rect.top >= topTitulo;
+
         const temTamanhoDeCard =
-          rect.width >= 100 &&
-          rect.width <= 380 &&
-          rect.height >= 60 &&
-          rect.height <= 260;
+          rect.width >= 80 &&
+          rect.width <= 460 &&
+          rect.height >= 35 &&
+          rect.height <= 320;
 
-        const pareceServico =
-          /R\$\s*\d+/i.test(texto) || /A partir de R\$/i.test(texto);
+        const contemPalavraServico =
+          /Corte|Servi|Servi[çc]o|Servicio/i.test(texto);
 
-        const naoEhTituloOuBusca =
-          !/Escolha o servi[çc]o|Buscar servi[çc]o|Exibir mais/i.test(texto);
+        const contemValorServico =
+          /R\$\s*[\d.,]+|₲\s*[\d.,]+|\$\s*[\d.,]+/i.test(texto);
 
-        return temTamanhoDeCard && pareceServico && naoEhTituloOuBusca;
+        const naoEhTituloBuscaOuMenu =
+          !/Escolha o servi[çc]o|Buscar servi[çc]o|Buscar servicio|Exibir mais|Mostrar mais|Dashboard|Agenda|Clientes|Atendentes|Produtos|Configura[çc][õo]es|cookies|Entendi/i.test(
+            texto
+          );
+
+        return (
+          depoisDoTitulo &&
+          temTamanhoDeCard &&
+          naoEhTituloBuscaOuMenu &&
+          (contemPalavraServico || contemValorServico)
+        );
       }) as HTMLElement[];
   }
 
@@ -144,6 +199,8 @@ describe('Agenda Crítica - Concorrência por duplo clique no Gravar', () => {
     cy.get('body', { timeout: 30000 })
       .invoke('text')
       .should('match', /Escolha o servi[çc]o/i);
+
+    fecharCookiesSeAparecer();
 
     cy.wait(1000);
 
@@ -154,7 +211,7 @@ describe('Agenda Crítica - Concorrência por duplo clique no Gravar', () => {
         cy.screenshot('servico-nao-encontrado');
 
         throw new Error(
-          'Nenhum card de serviço encontrado. Cadastre um serviço ou verifique se há serviços disponíveis no agendamento.'
+          'Nenhum card de serviço encontrado com Corte, Servi, R$, ₲ ou $.'
         );
       }
 
@@ -176,29 +233,69 @@ describe('Agenda Crítica - Concorrência por duplo clique no Gravar', () => {
         .click('center', { force: true });
     });
 
-    cy.wait(1200);
+    cy.wait(1500);
+
+    cy.get('body', { timeout: 30000 })
+      .invoke('text')
+      .should('match', /Escolha o profissional/i);
   }
 
   function obterCardsProfissional($body: JQuery<HTMLElement>) {
+    const tituloProfissional = $body
+      .find('*:visible')
+      .toArray()
+      .find((el) => {
+        const texto = Cypress.$(el)
+          .text()
+          .replace(/\s+/g, ' ')
+          .trim();
+
+        return /^Escolha o profissional$/i.test(texto);
+      });
+
+    const topTitulo = tituloProfissional
+      ? tituloProfissional.getBoundingClientRect().top
+      : 0;
+
     return $body
       .find('div:visible, button:visible, [role="button"]:visible')
       .toArray()
       .filter((el) => {
-        const texto = Cypress.$(el).text().replace(/\s+/g, ' ').trim();
+        const texto = Cypress.$(el)
+          .text()
+          .replace(/\s+/g, ' ')
+          .trim();
+
         const rect = el.getBoundingClientRect();
 
-        const temTamanhoDeCard =
-          rect.width >= 80 &&
-          rect.width <= 400 &&
-          rect.height >= 60 &&
-          rect.height <= 300;
+        const depoisDoTitulo = rect.top >= topTitulo;
 
-        const naoEhTituloOuBusca =
-          !/Escolha o profissional|Escolha o servi[çc]o|Buscar|Exibir mais/i.test(
+        const temTamanhoDeCard =
+          rect.width >= 70 &&
+          rect.width <= 700 &&
+          rect.height >= 25 &&
+          rect.height <= 360;
+
+        const pareceProfissional =
+          /person/i.test(texto) ||
+          /Usuario Paraguai/i.test(texto) ||
+          /E2E\s+Atendente/i.test(texto) ||
+          /Atendente/i.test(texto) ||
+          /Barbeiro/i.test(texto) ||
+          /Peluquero/i.test(texto) ||
+          texto.length >= 5;
+
+        const naoEhTituloOuMenu =
+          !/Escolha o profissional|Escolha o servi[çc]o|Corte|Servi[çc]o|Servicio|R\$|₲|\$|Dashboard|Agenda|Clientes|Atendentes|Produtos|Configura[çc][õo]es|Termos de uso|Política de privacidade|cookies|Entendi/i.test(
             texto
           );
 
-        return temTamanhoDeCard && naoEhTituloOuBusca && texto.length >= 3;
+        return (
+          depoisDoTitulo &&
+          temTamanhoDeCard &&
+          pareceProfissional &&
+          naoEhTituloOuMenu
+        );
       }) as HTMLElement[];
   }
 
@@ -206,6 +303,8 @@ describe('Agenda Crítica - Concorrência por duplo clique no Gravar', () => {
     cy.get('body', { timeout: 30000 })
       .invoke('text')
       .should('match', /Escolha o profissional/i);
+
+    fecharCookiesSeAparecer();
 
     cy.wait(1000);
 
@@ -220,13 +319,18 @@ describe('Agenda Crítica - Concorrência por duplo clique no Gravar', () => {
         );
       }
 
-      const profissionalE2E = cardsProfissional.find((card) => {
-        const texto = Cypress.$(card).text().replace(/\s+/g, ' ').trim();
+      const profissionalPreferido = cardsProfissional.find((card) => {
+        const texto = Cypress.$(card)
+          .text()
+          .replace(/\s+/g, ' ')
+          .trim();
 
-        return /E2E\s+Atendente/i.test(texto);
+        return /Usuario Paraguai|E2E\s+Atendente|Atendente|Barbeiro|Peluquero/i.test(
+          texto
+        );
       });
 
-      const cardProfissional = profissionalE2E || cardsProfissional[0];
+      const cardProfissional = profissionalPreferido || cardsProfissional[0];
 
       if (!cardProfissional) {
         throw new Error('Card de profissional inválido.');
@@ -245,12 +349,22 @@ describe('Agenda Crítica - Concorrência por duplo clique no Gravar', () => {
     });
 
     cy.wait(2000);
+
+    cy.get('body', { timeout: 30000 })
+      .invoke('text')
+      .should(
+        'match',
+        /Selecione o dia da semana|Selecione o dia|Escolha o dia|\d{2}\/\d{2}/i
+      );
   }
 
   function aguardarDatasAparecerem() {
     cy.get('body', { timeout: 30000 })
       .invoke('text')
-      .should('match', /Selecione o dia da semana|\d{2}\/\d{2}/i);
+      .should(
+        'match',
+        /Selecione o dia da semana|Selecione o dia|Escolha o dia|\d{2}\/\d{2}/i
+      );
   }
 
   function selecionarDataFuturaOuHoje() {
@@ -426,7 +540,7 @@ describe('Agenda Crítica - Concorrência por duplo clique no Gravar', () => {
     abrirAgenda();
   });
 
-  it('não deve criar agendamento duplicado ao clicar duas vezes em Gravar', () => {
+  it('Não deve criar agendamento duplicado ao clicar duas vezes em Gravar.', () => {
     abrirCadastroAgendamento();
 
     selecionarServico();

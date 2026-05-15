@@ -443,7 +443,7 @@ function prepararDadosComRucNaoCadastrado() {
   });
 }
 
- it('deve cadastrar usuário, empresa do Paraguai e configuração inicial do site', () => {
+ it('Deve cadastrar usuário, empresa do Paraguai e configuração inicial do site.', () => {
   prepararDadosComRucNaoCadastrado().then(() => {
     fazerLogoutSeNecessario();
 

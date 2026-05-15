@@ -127,131 +127,290 @@ describe('Agenda Crítica - Integridade do Payload', () => {
   }
 
   function obterCardsServico($body: JQuery<HTMLElement>) {
-    return $body
-      .find('div:visible, button:visible, [role="button"]:visible')
-      .toArray()
-      .filter((el) => {
-        const texto = limparTexto(Cypress.$(el).text());
-        const rect = el.getBoundingClientRect();
+  const encontrados: HTMLElement[] = [];
+  const vistos = new Set<HTMLElement>();
 
-        const temTamanhoDeCard =
-          rect.width >= 100 &&
-          rect.width <= 380 &&
-          rect.height >= 60 &&
-          rect.height <= 260;
+  $body
+    .find('*:visible')
+    .toArray()
+    .forEach((el) => {
+      const elemento = el as HTMLElement;
 
-        const pareceServico =
-          /R\$\s*\d+/i.test(texto) || /A partir de R\$/i.test(texto);
+      const texto = limparTexto(Cypress.$(elemento).text());
 
-        const naoEhTituloOuBusca =
-          !/Escolha o servi[çc]o|Buscar servi[çc]o|Exibir mais/i.test(texto);
+      if (!texto || texto.length > 220) {
+        return;
+      }
 
-        return temTamanhoDeCard && pareceServico && naoEhTituloOuBusca;
-      }) as HTMLElement[];
-  }
+      const rect = elemento.getBoundingClientRect();
 
-  function selecionarServico() {
-    cy.get('body', { timeout: 30000 })
-      .invoke('text')
-      .should('match', /Escolha o servi[çc]o/i);
+      const temTamanhoPossivel =
+        rect.width >= 20 &&
+        rect.width <= 700 &&
+        rect.height >= 10 &&
+        rect.height <= 420;
 
-    cy.wait(1000);
+      const contemPalavraServico =
+        /Corte|Servi|Servi[çc]o|Servicio/i.test(texto);
 
-    cy.get('body').then(($body) => {
-      const cardsServico = obterCardsServico($body);
-
-      if (cardsServico.length === 0) {
-        cy.screenshot('servico-payload-nao-encontrado');
-
-        throw new Error(
-          'Nenhum card de serviço encontrado. Cadastre um serviço ou verifique se há serviços disponíveis no agendamento.'
+      const contemValorServico =
+        /(?:R\$|\$|₲|G|Gs\.?|G\$)\s*[\d.,]+|[\d.,]+\s*(?:R\$|\$|₲|G|Gs\.?|G\$)/i.test(
+          texto
         );
+
+      const naoEhTituloBuscaOuMenu =
+        !/Escolha o servi[çc]o|Buscar servi[çc]o|Buscar servicio|Exibir mais|Mostrar mais|Dashboard|Agenda|Clientes|Atendentes|Produtos|Configura[çc][õo]es|Termos de uso|Política de privacidade|cookies|Entendi/i.test(
+          texto
+        );
+
+      if (
+        !temTamanhoPossivel ||
+        !naoEhTituloBuscaOuMenu ||
+        (!contemPalavraServico && !contemValorServico)
+      ) {
+        return;
       }
 
-      const cardServico = cardsServico[0];
+      const clicavel =
+        Cypress.$(elemento)
+          .closest('.q-card, .q-item, button, [role="button"], [class*="card"], [class*="item"]')
+          .get(0) || elemento;
 
-      if (!cardServico) {
-        throw new Error('Card de serviço inválido.');
+      if (!vistos.has(clicavel)) {
+        vistos.add(clicavel);
+        encontrados.push(clicavel);
       }
-
-      servicoSelecionadoTexto = limparTexto(Cypress.$(cardServico).text());
-
-      cy.log(`Serviço selecionado: ${servicoSelecionadoTexto}`);
-
-      cy.wrap(cardServico)
-        .scrollIntoView()
-        .click('center', { force: true });
     });
 
-    cy.wait(1200);
-  }
+  return encontrados.sort((a, b) => {
+    const textoA = limparTexto(Cypress.$(a).text());
+    const textoB = limparTexto(Cypress.$(b).text());
 
-  function obterCardsProfissional($body: JQuery<HTMLElement>) {
-    return $body
-      .find('div:visible, button:visible, [role="button"]:visible')
-      .toArray()
-      .filter((el) => {
-        const texto = limparTexto(Cypress.$(el).text());
-        const rect = el.getBoundingClientRect();
+    const scoreA =
+      (/Corte|Servi|Servi[çc]o|Servicio/i.test(textoA) ? 100 : 0) +
+      (/(?:R\$|\$|₲|G|Gs\.?|G\$)\s*[\d.,]+/i.test(textoA) ? 80 : 0) -
+      textoA.length;
 
-        const temTamanhoDeCard =
-          rect.width >= 80 &&
-          rect.width <= 400 &&
-          rect.height >= 60 &&
-          rect.height <= 300;
+    const scoreB =
+      (/Corte|Servi|Servi[çc]o|Servicio/i.test(textoB) ? 100 : 0) +
+      (/(?:R\$|\$|₲|G|Gs\.?|G\$)\s*[\d.,]+/i.test(textoB) ? 80 : 0) -
+      textoB.length;
 
-        const naoEhTituloOuBusca =
-          !/Escolha o profissional|Escolha o servi[çc]o|Buscar|Exibir mais/i.test(
-            texto
-          );
+    return scoreB - scoreA;
+  });
+}
 
-        return temTamanhoDeCard && naoEhTituloOuBusca && texto.length >= 3;
-      }) as HTMLElement[];
-  }
+function selecionarServico(tentativa = 0): Cypress.Chainable {
+  cy.get('body', { timeout: 30000 })
+    .invoke('text')
+    .should('match', /Escolha o servi[çc]o/i);
 
-  function selecionarProfissional() {
-    cy.get('body', { timeout: 30000 })
-      .invoke('text')
-      .should('match', /Escolha o profissional/i);
+  fecharCookiesSeAparecer();
 
-    cy.wait(1000);
+  cy.wait(1000);
 
-    cy.get('body').then(($body) => {
-      const cardsProfissional = obterCardsProfissional($body);
+  return cy.get('body').then(($body) => {
+    const cardsServico = obterCardsServico($body);
 
-      if (cardsProfissional.length === 0) {
-        cy.screenshot('atendente-payload-nao-encontrado');
+    if (cardsServico.length === 0) {
+      cy.log(`Texto da tela: ${limparTexto($body.text()).slice(0, 1200)}`);
+      cy.screenshot('servico-payload-nao-encontrado');
 
-        throw new Error(
-          'Nenhum card de profissional foi encontrado após selecionar o serviço.'
+      throw new Error(
+        'Nenhum card de serviço encontrado com Corte, Servi, Serviço, Servicio, R$, $, ₲ ou G.'
+      );
+    }
+
+    const cardServico = cardsServico[tentativa] || cardsServico[0];
+
+    if (!cardServico) {
+      throw new Error('Card de serviço inválido.');
+    }
+
+    servicoSelecionadoTexto = limparTexto(Cypress.$(cardServico).text());
+
+    cy.log(`Serviço selecionado: ${servicoSelecionadoTexto}`);
+
+    cy.wrap(cardServico)
+      .scrollIntoView()
+      .click('center', { force: true });
+
+    cy.wait(1500);
+
+    return cy.get('body').then(($bodyDepois) => {
+      const textoDepois = $bodyDepois.text();
+
+      if (/Escolha o profissional/i.test(textoDepois)) {
+        return cy.wrap(null);
+      }
+
+      if (tentativa + 1 < cardsServico.length && tentativa < 5) {
+        cy.log('Serviço clicado não avançou. Tentando próximo card.');
+
+        return selecionarServico(tentativa + 1);
+      }
+
+      cy.screenshot('servico-clicado-mas-nao-avancou');
+
+      throw new Error(
+        `Serviço foi clicado, mas a tela não avançou para profissional. Serviço: ${servicoSelecionadoTexto}`
+      );
+    });
+  });
+}
+
+function obterCardsProfissional($body: JQuery<HTMLElement>) {
+  const tituloProfissional = $body
+    .find('*:visible')
+    .toArray()
+    .find((el) => {
+      const texto = limparTexto(Cypress.$(el).text());
+
+      return /^Escolha o profissional$/i.test(texto);
+    });
+
+  const topTitulo = tituloProfissional
+    ? tituloProfissional.getBoundingClientRect().top
+    : 0;
+
+  return $body
+    .find(
+      '.q-card:visible, .q-item:visible, div:visible, button:visible, [role="button"]:visible'
+    )
+    .toArray()
+    .filter((el) => {
+      const texto = limparTexto(Cypress.$(el).text());
+      const rect = el.getBoundingClientRect();
+
+      const depoisDoTitulo = rect.top >= topTitulo - 5;
+
+      const temTamanhoPossivel =
+        rect.width >= 40 &&
+        rect.width <= 800 &&
+        rect.height >= 20 &&
+        rect.height <= 400;
+
+      const pareceProfissional =
+        /Usuario Paraguai/i.test(texto) ||
+        /E2E\s+Atendente/i.test(texto) ||
+        /Atendente/i.test(texto) ||
+        /Barbeiro/i.test(texto) ||
+        /Peluquero/i.test(texto) ||
+        /person/i.test(texto);
+
+      const naoEhMenuOuTitulo =
+        !/Escolha o profissional|Escolha o servi[çc]o|Corte|Barba|Cejas|Servi[çc]o|Servicio|R\$|₲|\$|Dashboard|Agenda|Clientes|Atendentes|Produtos|Configura[çc][õo]es|Termos de uso|Política de privacidade|cookies|Entendi/i.test(
+          texto
         );
-      }
 
-      const profissionalE2E = cardsProfissional.find((card) => {
-        const texto = limparTexto(Cypress.$(card).text());
+      return (
+        depoisDoTitulo &&
+        temTamanhoPossivel &&
+        pareceProfissional &&
+        naoEhMenuOuTitulo
+      );
+    }) as HTMLElement[];
+}
 
-        return /E2E\s+Atendente/i.test(texto);
-      });
+function selecionarProfissional() {
+  cy.get('body', { timeout: 30000 })
+    .invoke('text')
+    .should('match', /Escolha o profissional/i);
 
-      const cardProfissional = profissionalE2E || cardsProfissional[0];
+  fecharCookiesSeAparecer();
 
-      if (!cardProfissional) {
-        throw new Error('Card de profissional inválido.');
-      }
+  cy.wait(1000);
 
-      atendenteSelecionadoTexto = limparTexto(
-        Cypress.$(cardProfissional).text()
+  cy.get('body').then(($body) => {
+    const cardsProfissional = obterCardsProfissional($body);
+
+    if (cardsProfissional.length === 0) {
+      cy.screenshot('atendente-payload-nao-encontrado');
+
+      throw new Error(
+        'Nenhum card de profissional foi encontrado após selecionar o serviço.'
+      );
+    }
+
+    const profissionalPreferido = cardsProfissional.find((card) => {
+      const texto = limparTexto(Cypress.$(card).text());
+
+      return /Usuario Paraguai|E2E\s+Atendente|Atendente|Barbeiro|Peluquero/i.test(
+        texto
+      );
+    });
+
+    const cardProfissional = profissionalPreferido || cardsProfissional[0];
+
+    if (!cardProfissional) {
+      throw new Error('Card de profissional inválido.');
+    }
+
+    atendenteSelecionadoTexto = limparTexto(
+      Cypress.$(cardProfissional).text()
+    );
+
+    cy.log(`Atendente selecionado: ${atendenteSelecionadoTexto}`);
+
+    const clicavel =
+      Cypress.$(cardProfissional)
+        .closest('.q-card, .q-item, button, [role="button"]')
+        .get(0) || cardProfissional;
+
+    cy.wrap(clicavel)
+      .scrollIntoView()
+      .click('center', { force: true });
+  });
+
+  cy.wait(1500);
+
+  cy.get('body').then(($body) => {
+    const texto = $body.text();
+
+    if (/Escolha o profissional/i.test(texto) && !/\d{2}\/\d{2}/.test(texto)) {
+      cy.log(
+        'Ainda está na etapa profissional. Tentando clicar diretamente no nome.'
       );
 
-      cy.log(`Atendente selecionado: ${atendenteSelecionadoTexto}`);
+      const profissionalPorTexto = $body
+        .find('*:visible')
+        .toArray()
+        .find((el) => {
+          const textoElemento = limparTexto(Cypress.$(el).text());
 
-      cy.wrap(cardProfissional)
+          return /Usuario Paraguai|E2E\s+Atendente|Atendente|Barbeiro|Peluquero/i.test(
+            textoElemento
+          );
+        });
+
+      if (!profissionalPorTexto) {
+        cy.screenshot('profissional-segunda-tentativa-nao-encontrado');
+
+        throw new Error(
+          'Profissional apareceu na tela, mas não foi possível localizar elemento clicável.'
+        );
+      }
+
+      const clicavel =
+        Cypress.$(profissionalPorTexto)
+          .closest('.q-card, .q-item, button, [role="button"], div')
+          .get(0) || profissionalPorTexto;
+
+      cy.wrap(clicavel)
         .scrollIntoView()
         .click('center', { force: true });
-    });
 
-    cy.wait(2000);
-  }
+      cy.wait(1500);
+    }
+  });
+
+  cy.get('body', { timeout: 30000 })
+    .invoke('text')
+    .should(
+      'match',
+      /Selecione o dia da semana|Selecione o dia|Escolha o dia|\d{2}\/\d{2}/i
+    );
+}
 
   function aguardarDatasAparecerem() {
     cy.get('body', { timeout: 30000 })

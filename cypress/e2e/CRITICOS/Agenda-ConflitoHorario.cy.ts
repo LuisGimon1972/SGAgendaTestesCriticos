@@ -138,29 +138,43 @@ describe('Agenda Crítica - Conflito de horário', () => {
   }
 
   function obterCardsServico($body: JQuery<HTMLElement>) {
-    return $body
-      .find('div:visible, button:visible, [role="button"]:visible')
-      .toArray()
-      .filter((el) => {
-        const texto = Cypress.$(el).text().replace(/\s+/g, ' ').trim();
-        const rect = el.getBoundingClientRect();
+  return $body
+    .find('div:visible, button:visible, [role="button"]:visible')
+    .toArray()
+    .filter((el) => {
+      const texto = Cypress.$(el)
+        .text()
+        .replace(/\s+/g, ' ')
+        .trim();
 
-        const temTamanhoDeCard =
-          rect.width >= 100 &&
-          rect.width <= 380 &&
-          rect.height >= 60 &&
-          rect.height <= 260;
+      const rect = el.getBoundingClientRect();
 
-        const pareceServico =
-          /R\$\s*\d+/i.test(texto) ||
-          /A partir de R\$/i.test(texto);
+      const temTamanhoDeCard =
+        rect.width >= 80 &&
+        rect.width <= 460 &&
+        rect.height >= 35 &&
+        rect.height <= 320;
 
-        const naoEhTituloOuBusca =
-          !/Escolha o servi[çc]o|Buscar servi[çc]o|Exibir mais/i.test(texto);
+      const contemPalavraServico =
+        /Corte|Servi|Servi[çc]o|Servicio/i.test(texto);
 
-        return temTamanhoDeCard && pareceServico && naoEhTituloOuBusca;
-      }) as HTMLElement[];
-  }
+      const contemValorServico =
+        /R\$\s*[\d.,]+|\$\s*[\d.,]+|₲\s*[\d.,]+|G\s*[\d.,]+/i.test(
+          texto
+        );
+
+      const naoEhTituloOuBusca =
+        !/Escolha o servi[çc]o|Buscar servi[çc]o|Buscar servicio|Exibir mais|Mostrar mais/i.test(
+          texto
+        );
+
+      return (
+        temTamanhoDeCard &&
+        naoEhTituloOuBusca &&
+        (contemPalavraServico || contemValorServico)
+      );
+    }) as HTMLElement[];
+}
 
   function selecionarServico() {
     cy.get('body', { timeout: 30000 })
@@ -202,72 +216,169 @@ describe('Agenda Crítica - Conflito de horário', () => {
   }
 
   function obterCardsProfissional($body: JQuery<HTMLElement>) {
-    return $body
-      .find('div:visible, button:visible, [role="button"]:visible')
-      .toArray()
-      .filter((el) => {
-        const texto = Cypress.$(el).text().replace(/\s+/g, ' ').trim();
-        const rect = el.getBoundingClientRect();
-
-        const temTamanhoDeCard =
-          rect.width >= 80 &&
-          rect.width <= 400 &&
-          rect.height >= 60 &&
-          rect.height <= 300;
-
-        const naoEhTituloOuBusca =
-          !/Escolha o profissional|Escolha o servi[çc]o|Buscar|Exibir mais/i.test(
-            texto
-          );
-
-        return temTamanhoDeCard && naoEhTituloOuBusca && texto.length >= 3;
-      }) as HTMLElement[];
-  }
-
-  function selecionarProfissional() {
-    cy.get('body', { timeout: 30000 })
-      .invoke('text')
-      .should('match', /Escolha o profissional/i);
-
-    cy.wait(1000);
-
-    cy.get('body').then(($body) => {
-      const cardsProfissional = obterCardsProfissional($body);
-
-      if (cardsProfissional.length === 0) {
-        cy.screenshot('profissional-nao-encontrado');
-
-        throw new Error(
-          'Nenhum card de profissional foi encontrado após selecionar o serviço.'
-        );
-      }
-
-      const profissionalE2E = cardsProfissional.find((card) => {
-        const texto = Cypress.$(card).text().replace(/\s+/g, ' ').trim();
-
-        return /E2E\s+Atendente/i.test(texto);
-      });
-
-      const cardProfissional = profissionalE2E || cardsProfissional[0];
-
-      if (!cardProfissional) {
-        throw new Error('Card de profissional inválido.');
-      }
-
-      const textoProfissional = Cypress.$(cardProfissional)
+  const tituloProfissional = $body
+    .find('*:visible')
+    .toArray()
+    .find((el) => {
+      const texto = Cypress.$(el)
         .text()
         .replace(/\s+/g, ' ')
         .trim();
 
-      cy.log(`Profissional escolhido: ${textoProfissional}`);
-
-      cy.wrap(cardProfissional)
-        .scrollIntoView()
-        .click('center', { force: true });
+      return /^Escolha o profissional$/i.test(texto);
     });
 
-    cy.wait(2000);
-  }
+  const topTitulo = tituloProfissional
+    ? tituloProfissional.getBoundingClientRect().top
+    : 0;
+
+  return $body
+    .find(
+      '.q-card:visible, .q-item:visible, div:visible, button:visible, [role="button"]:visible'
+    )
+    .toArray()
+    .filter((el) => {
+      const texto = Cypress.$(el)
+        .text()
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      const rect = el.getBoundingClientRect();
+
+      const depoisDoTitulo = rect.top >= topTitulo - 5;
+
+      const temTamanhoPossivel =
+        rect.width >= 40 &&
+        rect.width <= 800 &&
+        rect.height >= 20 &&
+        rect.height <= 400;
+
+      const pareceProfissional =
+        /Usuario Paraguai/i.test(texto) ||
+        /E2E\s+Atendente/i.test(texto) ||
+        /Atendente/i.test(texto) ||
+        /Barbeiro/i.test(texto) ||
+        /Peluquero/i.test(texto) ||
+        /person/i.test(texto);
+
+      const naoEhMenuOuTitulo =
+        !/Escolha o profissional|Escolha o servi[çc]o|Corte|Barba|Cejas|Servi[çc]o|Servicio|R\$|₲|\$|Dashboard|Agenda|Clientes|Atendentes|Produtos|Configura[çc][õo]es|Termos de uso|Política de privacidade|cookies|Entendi/i.test(
+          texto
+        );
+
+      return (
+        depoisDoTitulo &&
+        temTamanhoPossivel &&
+        pareceProfissional &&
+        naoEhMenuOuTitulo
+      );
+    }) as HTMLElement[];
+}
+
+function selecionarProfissional() {
+  cy.get('body', { timeout: 30000 })
+    .invoke('text')
+    .should('match', /Escolha o profissional/i);
+
+  fecharCookiesSeAparecer();
+
+  cy.wait(1000);
+
+  cy.get('body').then(($body) => {
+    const cardsProfissional = obterCardsProfissional($body);
+
+    if (cardsProfissional.length === 0) {
+      cy.screenshot('profissional-nao-encontrado');
+
+      throw new Error(
+        'Nenhum card de profissional foi encontrado após selecionar o serviço.'
+      );
+    }
+
+    const profissionalPreferido = cardsProfissional.find((card) => {
+      const texto = Cypress.$(card)
+        .text()
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      return /Usuario Paraguai|E2E\s+Atendente|Atendente|Barbeiro|Peluquero/i.test(
+        texto
+      );
+    });
+
+    const cardProfissional = profissionalPreferido || cardsProfissional[0];
+
+    if (!cardProfissional) {
+      throw new Error('Card de profissional inválido.');
+    }
+
+    const textoProfissional = Cypress.$(cardProfissional)
+      .text()
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    cy.log(`Profissional escolhido: ${textoProfissional}`);
+
+    const clicavel =
+      Cypress.$(cardProfissional)
+        .closest('.q-card, .q-item, button, [role="button"]')
+        .get(0) || cardProfissional;
+
+    cy.wrap(clicavel)
+      .scrollIntoView()
+      .click('center', { force: true });
+  });
+
+  cy.wait(1500);
+
+  cy.get('body').then(($body) => {
+    const texto = $body.text();
+
+    if (/Escolha o profissional/i.test(texto) && !/\d{2}\/\d{2}/.test(texto)) {
+      cy.log('Ainda está na etapa profissional. Tentando clicar diretamente no nome.');
+
+      const profissionalPorTexto = $body
+        .find('*:visible')
+        .toArray()
+        .find((el) => {
+          const textoElemento = Cypress.$(el)
+            .text()
+            .replace(/\s+/g, ' ')
+            .trim();
+
+          return /Usuario Paraguai|E2E\s+Atendente|Atendente|Barbeiro|Peluquero/i.test(
+            textoElemento
+          );
+        });
+
+      if (!profissionalPorTexto) {
+        cy.screenshot('profissional-segunda-tentativa-nao-encontrado');
+
+        throw new Error(
+          'Profissional apareceu na tela, mas não foi possível localizar elemento clicável.'
+        );
+      }
+
+      const clicavel =
+        Cypress.$(profissionalPorTexto)
+          .closest('.q-card, .q-item, button, [role="button"], div')
+          .get(0) || profissionalPorTexto;
+
+      cy.wrap(clicavel)
+        .scrollIntoView()
+        .click('center', { force: true });
+
+      cy.wait(1500);
+    }
+  });
+
+  cy.get('body', { timeout: 30000 })
+    .invoke('text')
+    .should(
+      'match',
+      /Selecione o dia da semana|Selecione o dia|Escolha o dia|\d{2}\/\d{2}/i
+    );
+}
 
   function aguardarDatasAparecerem() {
     cy.get('body', { timeout: 30000 })
