@@ -152,5 +152,27 @@
     "fantasia": "Fantasia Paraguai 1778791860742",
     "documento": "80027985-9",
     "slug": "py-1778791860742"
+  },
+  {
+    "dataCriacao": "2026-05-15T14:40:16.776Z",
+    "pais": "Brasil",
+    "nomeUsuario": "Usuario 1778856016570",
+    "emailUsuario": "usuario.1778856016570@teste.com",
+    "senhaUsuario": "12345678",
+    "razaoSocial": "Barbearia 1778856016570",
+    "fantasia": "Fantasia 1778856016570",
+    "documento": "53.005.668/0001-98",
+    "slug": "site-1778856016570"
+  },
+  {
+    "dataCriacao": "2026-05-15T14:46:59.367Z",
+    "pais": "Paraguay",
+    "nomeUsuario": "Usuario Paraguai 1778856419341",
+    "emailUsuario": "usuario.paraguai.1778856419341@teste.com",
+    "senhaUsuario": "12345678",
+    "razaoSocial": "GRUPO AAM CELL SOCIEDAD ANONIMA E2E 1778856419341",
+    "fantasia": "Fantasia Paraguai 1778856419341",
+    "documento": "80095392-4",
+    "slug": "py-1778856419341"
   }
 ]
