@@ -2,7 +2,7 @@ describe('Planos - Cadastro', () => {
   const timestamp = Date.now();
 
   const nomePlano = `E2E Plano ${timestamp}`;
-  const valorPlano = '5000'; // 50,00
+  const valorPlano = '1475'; // 50,00
   const duracaoPlano = '2';
   const descricaoPlano = `Plano criado automaticamente pelo Cypress em ${timestamp}`;
 
