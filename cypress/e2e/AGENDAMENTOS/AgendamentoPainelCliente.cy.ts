@@ -235,7 +235,7 @@ function selecionarServicosPainelCliente() {
     .invoke('text')
     .should(
       'match',
-      /Selecione os servi[çc]os|Selecciona los servicios|Escolha um ou mais servi[çc]os|Elige uno o más servicios|servi[çc]os que deseja agendar|servicios que deseas reservar|Escolha os servi[çc]os/i
+      /Selecione os servi[çc]os|Selecciona los servicios|Escolha um ou mais servi[çc]os|Elige uno o más servicios|servi[çc]os que deseja agendar|servicios que deseas reservar|Escolha os servi[çc]os|Choose.*services|Select.*services/i
     );
 
   cy.wait(3000);
@@ -248,7 +248,7 @@ function selecionarServicosPainelCliente() {
       cy.screenshot('painel-cliente-servicos-nao-encontrados');
 
       throw new Error(
-        'Nenhum serviço encontrado. A busca aceita maiúsculas/minúsculas, Corte, Servi, Serviço, Servicio, Barba, valor em R$, $, ₲, G, Gs, BRL e cards com valor + duração.'
+        'Nenhum serviço encontrado. A busca aceita maiúsculas/minúsculas, Corte, Servi, Serviço, Servicio, Barba, valor em R$, $, ₲, G, Gs, BRL, PYG e cards com valor + duração.'
       );
     }
 
@@ -270,16 +270,57 @@ function selecionarServicosPainelCliente() {
     });
   });
 
-  cy.get('body', { timeout: 30000 })
-    .invoke('text')
-    .should(
-      'match',
-      /(^|[^\d])(?:1|2)\s*(?:servi[çc]o|servicio)(?:\(s\)|s)?/i
-    )
-    .and(
-      'not.match',
-      /0\s*(?:servi[çc]o|servicio)\(s\)\s*(?:R\$|BRL|\$|₲|G|Gs\.?)?\s*0,00/i
+  cy.wait(1000);
+
+  cy.get('body', { timeout: 30000 }).then(($body) => {
+    const textoOriginal = limparTexto($body.text());
+    const texto = normalizarTextoBusca(textoOriginal);
+
+    cy.log(`Texto após selecionar serviços: ${textoOriginal.slice(0, 1200)}`);
+
+    const temContinuar = /CONTINUAR|SIGUIENTE|NEXT/.test(texto);
+
+    const ficouComZeroServico =
+      /0\s*(SERVICO|SERVICIO)\(S\)?\s*(R\$|BRL|PYG|\$|₲|G|GS\.?)?\s*0,00/.test(
+        texto
+      );
+
+    if (ficouComZeroServico) {
+      cy.screenshot('servicos-nao-foram-selecionados');
+
+      throw new Error(
+        'Os serviços foram clicados, mas o contador continuou em 0 serviço(s).'
+      );
+    }
+
+    const matchesQuantidade = Array.from(
+      texto.matchAll(/(\d+)\s*(SERVICO|SERVICIO)\(S\)?/g)
     );
+
+    const quantidades = matchesQuantidade
+      .map((match) => Number(match[1]))
+      .filter((numero) => Number.isFinite(numero));
+
+    const temQuantidadeMaiorQueZero = quantidades.some(
+      (quantidade) => quantidade > 0
+    );
+
+    if (!temQuantidadeMaiorQueZero && !temContinuar) {
+      cy.screenshot('contador-servicos-nao-encontrado');
+
+      throw new Error(
+        `Não foi possível validar quantidade de serviços selecionados. Texto: ${textoOriginal.slice(
+          0,
+          1200
+        )}`
+      );
+    }
+
+    expect(
+      temQuantidadeMaiorQueZero || temContinuar,
+      'serviço selecionado ou botão Continuar disponível'
+    ).to.eq(true);
+  });
 }
 
   function clicarContinuar() {

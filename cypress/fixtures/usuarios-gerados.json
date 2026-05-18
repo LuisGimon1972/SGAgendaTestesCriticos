@@ -174,5 +174,27 @@
     "fantasia": "Fantasia Paraguai 1778856419341",
     "documento": "80095392-4",
     "slug": "py-1778856419341"
+  },
+  {
+    "dataCriacao": "2026-05-18T13:13:52.458Z",
+    "pais": "Brasil",
+    "nomeUsuario": "Usuario 1779110032365",
+    "emailUsuario": "usuario.1779110032365@teste.com",
+    "senhaUsuario": "12345678",
+    "razaoSocial": "Barbearia 1779110032365",
+    "fantasia": "Fantasia 1779110032365",
+    "documento": "38.993.891/0001-05",
+    "slug": "site-1779110032365"
+  },
+  {
+    "dataCriacao": "2026-05-18T13:14:20.105Z",
+    "pais": "Paraguay",
+    "nomeUsuario": "Usuario Paraguai 1779110060079",
+    "emailUsuario": "usuario.paraguai.1779110060079@teste.com",
+    "senhaUsuario": "12345678",
+    "razaoSocial": "FILIPINA S.R.L. E2E 1779110060079",
+    "fantasia": "Fantasia Paraguai 1779110060079",
+    "documento": "80031761-0",
+    "slug": "py-1779110060079"
   }
 ]
