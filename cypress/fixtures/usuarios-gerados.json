@@ -196,5 +196,27 @@
     "fantasia": "Fantasia Paraguai 1779110060079",
     "documento": "80031761-0",
     "slug": "py-1779110060079"
+  },
+  {
+    "dataCriacao": "2026-05-18T19:17:32.521Z",
+    "pais": "Brasil",
+    "nomeUsuario": "Usuario 1779131852415",
+    "emailUsuario": "usuario.1779131852415@teste.com",
+    "senhaUsuario": "12345678",
+    "razaoSocial": "Barbearia 1779131852415",
+    "fantasia": "Fantasia 1779131852415",
+    "documento": "69.603.334/0001-56",
+    "slug": "site-1779131852415"
+  },
+  {
+    "dataCriacao": "2026-05-18T19:17:57.878Z",
+    "pais": "Paraguay",
+    "nomeUsuario": "Usuario Paraguai 1779131877841",
+    "emailUsuario": "usuario.paraguai.1779131877841@teste.com",
+    "senhaUsuario": "12345678",
+    "razaoSocial": "NOGUERA SAMUDIO RUBEN CESAR EIRL E2E 1779131877841",
+    "fantasia": "Fantasia Paraguai 1779131877841",
+    "documento": "80063639-2",
+    "slug": "py-1779131877841"
   }
 ]
